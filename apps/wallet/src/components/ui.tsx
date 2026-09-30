@@ -22,8 +22,9 @@ import { ChevronLeft, Copy, Eye, EyeOff, type LucideIcon } from 'lucide-react-na
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Platform } from 'react-native';
-import { fonts, radius, spacing, type Palette, withAlpha } from '@/theme/tokens';
+import { fonts, radius, spacing, type Palette } from '@/theme/tokens';
 import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
+import { SuccessBurst } from '@/components/SuccessBurst';
 import type { Denom } from '@/services/ledgerx/types';
 import { formatAmount } from '@/utils/format';
 
@@ -310,11 +311,13 @@ export function SuccessView({ title, subtitle, detail, onDone }: { title: string
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.successView}>
-      <Animated.View entering={FadeInDown.springify()} style={styles.successRing}><TextLabel size={40} weight={fonts.displayBold} color={colors.success}>✓</TextLabel></Animated.View>
-      <TextLabel size={26} weight={fonts.displayBold} style={styles.center}>{title}</TextLabel>
-      <TextLabel size={14} color={colors.textMuted} style={styles.center}>{subtitle}</TextLabel>
-      {detail ? <TextLabel size={11} color={colors.textDim} style={styles.center}>{detail}</TextLabel> : null}
-      <Button onPress={onDone} style={styles.fullButton}>Terminé</Button>
+      <View style={styles.successBurst}><SuccessBurst /></View>
+      <Animated.View entering={FadeInDown.delay(650).springify()}><TextLabel size={26} weight={fonts.displayBold} style={styles.center}>{title}</TextLabel></Animated.View>
+      <Animated.View entering={FadeInDown.delay(750).springify()}><TextLabel size={14} color={colors.textMuted} style={styles.center}>{subtitle}</TextLabel></Animated.View>
+      {detail ? <Animated.View entering={FadeInDown.delay(850).springify()}><TextLabel size={11} color={colors.textDim} style={styles.center}>{detail}</TextLabel></Animated.View> : null}
+      <Animated.View entering={FadeInUp.delay(950)} style={styles.fullButtonWrapper}>
+        <Button onPress={onDone} style={styles.fullButton}>Terminé</Button>
+      </Animated.View>
     </View>
   );
 }
@@ -459,9 +462,10 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   otpBox: { width: 44, height: 54, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   otpActive: { borderColor: colors.accent },
   successView: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing(4) },
-  successRing: { width: 96, height: 96, borderRadius: 48, borderWidth: 1, borderColor: colors.success, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(colors.success, 0.12), marginBottom: spacing(2) },
+  successBurst: { marginBottom: spacing(2) },
   center: { textAlign: 'center' },
   fullButton: { width: '100%', marginTop: spacing(4) },
+  fullButtonWrapper: { width: '100%' },
   stepRow: { flexDirection: 'row', gap: 6 },
   stepLine: { flex: 1, height: 3, borderRadius: 2, backgroundColor: colors.surfaceAlt },
   stepLineActive: { backgroundColor: colors.primary },
