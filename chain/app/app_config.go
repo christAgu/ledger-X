@@ -1,6 +1,8 @@
 package app
 
 import (
+	_ "ledgerx/x/treasury/module"
+	treasurymoduletypes "ledgerx/x/treasury/types"
 	"time"
 
 	runtimev1alpha1 "cosmossdk.io/api/cosmos/app/runtime/v1alpha1"
@@ -81,6 +83,7 @@ var (
 		{Account: nft.ModuleName},
 		{Account: ibctransfertypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
 		{Account: icatypes.ModuleName},
+		{Account: treasurymoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
 	}
 
 	// blocked account addresses
@@ -122,14 +125,14 @@ var (
 						// ibc modules
 						ibcexported.ModuleName,
 						// chain modules
-					},
+						treasurymoduletypes.ModuleName},
 					EndBlockers: []string{
 						govtypes.ModuleName,
 						stakingtypes.ModuleName,
 						feegrant.ModuleName,
 						group.ModuleName,
 						// chain modules
-					},
+						treasurymoduletypes.ModuleName},
 					// The following is mostly only needed when ModuleName != StoreKey name.
 					OverrideStoreKeys: []*runtimev1alpha1.StoreKeyConfig{
 						{
@@ -164,7 +167,7 @@ var (
 						ibctransfertypes.ModuleName,
 						icatypes.ModuleName,
 						// chain modules
-					},
+						treasurymoduletypes.ModuleName},
 				}),
 			},
 			{
@@ -259,6 +262,9 @@ var (
 				Name:   epochstypes.ModuleName,
 				Config: appconfig.WrapAny(&epochsmodulev1.Module{}),
 			},
-		},
+			{
+				Name:   treasurymoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&treasurymoduletypes.Module{}),
+			}},
 	})
 )

@@ -1,0 +1,52 @@
+syntax = "proto3";
+package ledgerx.treasury.v1;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "ledgerx/treasury/v1/params.proto";
+
+option go_package = "ledgerx/x/treasury/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // Parameters queries the parameters of the module.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/ledgerx/treasury/v1/params";
+  }
+  rpc DepositRef(QueryDepositRefRequest) returns (QueryDepositRefResponse) {
+    option (google.api.http).get = "/ledgerx/treasury/v1/deposit_ref/{ref}";
+  }
+  rpc CashoutRef(QueryCashoutRefRequest) returns (QueryCashoutRefResponse) {
+    option (google.api.http).get = "/ledgerx/treasury/v1/cashout_ref/{ref}";
+  }
+}
+
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  // params holds all the parameters of this module.
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+message QueryDepositRefRequest {
+  string ref = 1;
+}
+
+message QueryDepositRefResponse {
+  bool used = 1;
+}
+
+message QueryCashoutRefRequest {
+  string ref = 1;
+}
+
+message QueryCashoutRefResponse {
+  bool used = 1;
+}
