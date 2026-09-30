@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from 'react';
+import type { PropsWithChildren, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -39,7 +39,7 @@ export function TextLabel({
   return <Text {...props} style={[{ color, fontFamily: weight, fontSize: size }, style]}>{children}</Text>;
 }
 
-export function PressableScale({ children, style, onPress, disabled, ...props }: PressableProps) {
+export function PressableScale({ children, style, onPress, disabled, haptic = true, ...props }: PressableProps & { haptic?: boolean }) {
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return (
@@ -55,7 +55,7 @@ export function PressableScale({ children, style, onPress, disabled, ...props }:
         props.onPressOut?.(event);
       }}
       onPress={(event) => {
-        if (Platform.OS !== 'web') void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (haptic && Platform.OS !== 'web') void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress?.(event);
       }}
       style={[animatedStyle, style]}>
@@ -96,11 +96,12 @@ export function Card({ children, style }: PropsWithChildren<{ style?: StyleProp<
 
 export function Screen({
   children,
+  overlay,
   scroll = false,
   gradient = false,
   tabBarClearance = false,
   style,
-}: PropsWithChildren<{ scroll?: boolean; gradient?: boolean; tabBarClearance?: boolean; style?: StyleProp<ViewStyle> }>) {
+}: PropsWithChildren<{ overlay?: ReactNode; scroll?: boolean; gradient?: boolean; tabBarClearance?: boolean; style?: StyleProp<ViewStyle> }>) {
   const insets = useSafeAreaInsets();
   const content = scroll ? (
     <ScrollView contentContainerStyle={[styles.screenContent, style, tabBarClearance && { paddingBottom: 84 + Math.max(insets.bottom, 10) }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -115,6 +116,7 @@ export function Screen({
         <LinearGradient colors={['#143A79', '#081C3C', colors.bg]} locations={[0, 0.55, 1]} style={StyleSheet.absoluteFill} />
       ) : null}
       {content}
+      {overlay}
     </SafeAreaView>
   );
 }
@@ -221,10 +223,10 @@ export function Sheet({ visible, title, onClose, children }: PropsWithChildren<{
   );
 }
 
-export function Toast({ message, visible }: { message: string; visible: boolean }) {
+export function Toast({ message, visible, style }: { message: string; visible: boolean; style?: StyleProp<ViewStyle> }) {
   if (!visible) return null;
   return (
-    <Animated.View entering={FadeInUp.duration(180)} style={styles.toast}>
+    <Animated.View entering={FadeInUp.duration(180)} style={[styles.toast, style]}>
       <TextLabel size={13} weight={fonts.bodySemi}>{message}</TextLabel>
     </Animated.View>
   );

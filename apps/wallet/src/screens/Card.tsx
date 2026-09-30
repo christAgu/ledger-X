@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { Copy, CreditCard, LockKeyhole, ShieldCheck } from 'lucide-react-native';
+import { Copy, CreditCard, Globe, LockKeyhole, Nfc, ShieldCheck, Snowflake, type LucideIcon } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { authenticate } from '@/services/auth';
 import { colors, fonts, radius, spacing } from '@/theme/tokens';
 import { useWalletStore, verifyPin } from '@/state/wallet';
-import { Button, Card as Surface, Header, PinPad, PressableScale, Screen, Sheet, SwitchRow, TextLabel, Toast } from '@/components/ui';
+import { Button, Card as Surface, Header, PinPad, PressableScale, Screen, Sheet, TextLabel, Toast } from '@/components/ui';
 
 const limits = [100_000, 250_000, 500_000, 1_000_000];
 
@@ -21,6 +22,7 @@ export default function CardScreen() {
   const [error, setError] = useState(false);
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [toast, setToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('Numéro de carte copié');
   const rotation = useSharedValue(0);
   const animatedCard = useAnimatedStyle(() => ({ transform: [{ perspective: 1000 }, { rotateY: `${rotation.value}deg` }] }));
 
@@ -48,12 +50,21 @@ export default function CardScreen() {
   };
   const copyPan = async () => {
     await Clipboard.setStringAsync(card.pan.replace(/\s/g, ''));
+    showToast('Numéro de carte copié');
+  };
+  const showToast = (message: string) => {
+    setToastMessage(message);
     setToast(true);
     setTimeout(() => setToast(false), 1600);
   };
+  const updateCardOption = (patch: Parameters<typeof updateCard>[0], message: string) => {
+    updateCard(patch);
+    void Haptics.selectionAsync();
+    showToast(message);
+  };
 
   return (
-    <Screen scroll tabBarClearance style={styles.content}>
+    <Screen scroll tabBarClearance style={styles.content} overlay={<Toast message={toastMessage} visible={toast} style={styles.toastAboveTab} />}>
       <Header title="Ma carte" back={false} right={<PressableScale><TextLabel size={20} color={colors.textMuted}>···</TextLabel></PressableScale>} />
       <Animated.View style={[styles.cardShell, animatedCard]}>
         <LinearGradient colors={card.frozen ? ['#28374D', '#19283D'] : ['#4F7BFF', '#2458ED', '#1B3FB8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.bankCard, flipped && styles.reverseFace]}>
@@ -64,7 +75,12 @@ export default function CardScreen() {
             <>
               <View style={styles.cardTop}><TextLabel size={17} weight={fonts.displayBold}>Ledger <TextLabel size={17} weight={fonts.displayBold} color={colors.accent}>X</TextLabel></TextLabel><TextLabel size={9} color={colors.textMuted} weight={fonts.bodySemi}>VIRTUAL</TextLabel></View>
               <View style={styles.cardChip}><View /><View /><View /><View /></View>
-              <TextLabel size={19} weight={fonts.display} style={styles.panText}>{revealed ? card.pan : '••••  ••••  ••••  4821'}</TextLabel>
+              {revealed ? (
+                <View style={styles.panRow}>
+                  <TextLabel size={19} weight={fonts.display} style={styles.panText}>{card.pan}</TextLabel>
+                  <PressableScale accessibilityRole="button" accessibilityLabel="Copier le numéro de carte" onPress={copyPan} style={styles.copyButton}><Copy size={15} color={colors.text} /><TextLabel size={10} weight={fonts.bodySemi}>Copier</TextLabel></PressableScale>
+                </View>
+              ) : <TextLabel size={19} weight={fonts.display} style={styles.panText}>••••  ••••  ••••  4821</TextLabel>}
               <View style={styles.cardBottom}>
                 <View><TextLabel size={8} color={colors.textMuted}>TITULAIRE</TextLabel><TextLabel size={11} weight={fonts.bodySemi}>{card.holder}</TextLabel></View>
                 <View><TextLabel size={8} color={colors.textMuted}>EXP</TextLabel><TextLabel size={11} weight={fonts.bodySemi}>{revealed ? card.expiry : '••/••'}</TextLabel></View>
@@ -83,16 +99,12 @@ export default function CardScreen() {
         </LinearGradient>
       </Animated.View>
       <View style={styles.cardActions}>
-        <PressableScale onPress={toggleDetails} style={styles.detailButton}><ShieldCheck size={18} color={colors.accent} /><TextLabel size={11} weight={fonts.bodySemi} numberOfLines={1}>{revealed ? 'Masquer' : 'Détails'}</TextLabel></PressableScale>
-        {revealed ? <PressableScale onPress={copyPan} style={styles.detailButton}><Copy size={16} color={colors.accent} /><TextLabel size={11} weight={fonts.bodySemi} numberOfLines={1}>Copier</TextLabel></PressableScale> : null}
-        <PressableScale onPress={flip} style={styles.detailButton}><CreditCard size={17} color={colors.accent} /><TextLabel size={11} weight={fonts.bodySemi} numberOfLines={1}>{flipped ? 'Recto' : 'Verso'}</TextLabel></PressableScale>
+        <CardAction icon={ShieldCheck} label={revealed ? 'Masquer' : 'Détails'} onPress={toggleDetails} />
+        <CardAction icon={CreditCard} label={flipped ? 'Recto' : 'Verso'} onPress={flip} />
+        <CardAction icon={Snowflake} label={card.frozen ? 'Dégeler' : 'Geler'} active={card.frozen} checked={card.frozen} toggle onPress={() => updateCardOption({ frozen: !card.frozen }, card.frozen ? 'Carte dégelée' : 'Carte gelée')} />
+        <CardAction icon={Nfc} label="Sans contact" active={card.contactless} checked={card.contactless} toggle onPress={() => updateCardOption({ contactless: !card.contactless }, card.contactless ? 'Sans contact désactivé' : 'Sans contact activé')} />
+        <CardAction icon={Globe} label="En ligne" active={card.onlinePayments} checked={card.onlinePayments} toggle onPress={() => updateCardOption({ onlinePayments: !card.onlinePayments }, card.onlinePayments ? 'Paiements en ligne désactivés' : 'Paiements en ligne activés')} />
       </View>
-
-      <Surface style={styles.controlCard}>
-        <SwitchRow title="Geler la carte" subtitle="Bloquer temporairement tous les paiements" value={card.frozen} onValueChange={(frozen) => updateCard({ frozen })} />
-        <SwitchRow title="Paiements en ligne" value={card.onlinePayments} onValueChange={(onlinePayments) => updateCard({ onlinePayments })} />
-        <SwitchRow title="Sans contact" value={card.contactless} onValueChange={(contactless) => updateCard({ contactless })} />
-      </Surface>
 
       <Surface style={styles.limitCard}>
         <View style={styles.rowBetween}><View><TextLabel size={15} weight={fonts.bodySemi}>Plafond mensuel</TextLabel><TextLabel size={12} color={colors.textDim}>Dépensé 132 500 XOF</TextLabel></View><TextLabel size={14} color={colors.accent} weight={fonts.bodySemi}>{(card.limitMonthly / 1000).toFixed(0)}k</TextLabel></View>
@@ -117,8 +129,23 @@ export default function CardScreen() {
         <TextLabel size={14} color={colors.textMuted}>Une nouvelle carte virtuelle sera créée. Cette action est simulée dans la démo.</TextLabel>
         <Button onPress={() => { setReplaceOpen(false); updateCard({ pan: '4532 1045 8892 6214' }); }}>Confirmer le remplacement</Button>
       </Sheet>
-      <Toast message="Numéro de carte copié" visible={toast} />
     </Screen>
+  );
+}
+
+function CardAction({ icon: Icon, label, onPress, active = false, toggle = false, checked = false }: { icon: LucideIcon; label: string; onPress: () => void; active?: boolean; toggle?: boolean; checked?: boolean }) {
+  return (
+    <PressableScale
+      haptic={!toggle}
+      accessibilityRole={toggle ? 'switch' : 'button'}
+      accessibilityLabel={label}
+      accessibilityState={toggle ? { checked } : undefined}
+      aria-checked={toggle ? checked : undefined}
+      onPress={onPress}
+      style={styles.detailButton}>
+      <View style={[styles.actionIcon, active && styles.actionIconActive]}><Icon size={20} color={active ? colors.text : colors.textDim} /></View>
+      <TextLabel size={11} weight={fonts.bodySemi} numberOfLines={1}>{label}</TextLabel>
+    </PressableScale>
   );
 }
 
@@ -134,14 +161,18 @@ const styles = StyleSheet.create({
   cardChip: { width: 34, height: 26, borderRadius: 5, borderWidth: 1, borderColor: '#A9C8F6', flexDirection: 'row', flexWrap: 'wrap', overflow: 'hidden', opacity: 0.9 },
   panText: { letterSpacing: 1.2 },
   cardBottom: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
+  panRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing(2) },
+  copyButton: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 5, borderRadius: radius.pill, backgroundColor: 'rgba(255,255,255,0.14)' },
   frozenOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(5,17,42,.58)', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
   cardBack: { flex: 1, justifyContent: 'space-between' },
   magnetic: { height: 42, backgroundColor: '#020917', marginHorizontal: -spacing(4), marginTop: spacing(3) },
   cvvLine: { backgroundColor: colors.paper, height: 32, borderRadius: 4, paddingHorizontal: spacing(2), flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   visaBack: { alignSelf: 'flex-end' },
-  cardActions: { flexDirection: 'row', gap: spacing(1) },
-  detailButton: { flex: 1, minWidth: 0, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 5 },
-  controlCard: { paddingHorizontal: spacing(3), paddingVertical: spacing(1) },
+  cardActions: { flexDirection: 'row', width: '100%', marginHorizontal: -spacing(4) },
+  detailButton: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 5 },
+  actionIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgElevated, borderWidth: 1, borderColor: colors.border },
+  actionIconActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  toastAboveTab: { bottom: 130 },
   limitCard: { gap: spacing(3) },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   progress: { height: 6, borderRadius: 3, backgroundColor: colors.bgElevated, overflow: 'hidden' },
