@@ -98,6 +98,7 @@ export function AnimatedGradientBackdrop({ height }: { height: number }) {
         <LinearGradient colors={['rgba(138,180,255,0.18)', 'rgba(138,180,255,0)']} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
       </Animated.View>
       <Animated.View style={[StyleSheet.absoluteFill, styles.darkOverlay, darkOverlayStyle]} />
+      <View style={[StyleSheet.absoluteFill, styles.dim]} />
       <LinearGradient colors={['rgba(7,22,50,0)', '#0A2147']} locations={[0, 1]} style={styles.fade} />
     </View>
   );
@@ -109,5 +110,6 @@ const styles = StyleSheet.create({
   layerB: { opacity: 0.3 },
   lightOverlay: { opacity: 1 },
   darkOverlay: { backgroundColor: '#030A1C' },
+  dim: { backgroundColor: '#030A1C', opacity: 0.22 },
   fade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 140 },
 });

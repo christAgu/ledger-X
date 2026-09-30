@@ -114,7 +114,7 @@ export function Screen({
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       {gradient ? (
-        <LinearGradient colors={['#143A79', '#081C3C', colors.bg]} locations={[0, 0.55, 1]} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={['#0F2E63', '#081C3C', colors.bg]} locations={[0, 0.55, 1]} style={StyleSheet.absoluteFill} />
       ) : null}
       {content}
       {overlay}
