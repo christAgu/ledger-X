@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { Platform } from 'react-native';
 import type { Denom, SmartAccount } from '@/services/ledgerx/types';
+import { XOF_PER_EUR } from '@/services/rates';
 
 export type TransactionType = 'deposit' | 'send' | 'receive' | 'cashout' | 'convert' | 'card';
 export type WalletTransaction = {
@@ -55,20 +56,21 @@ type WalletState = {
 };
 
 const initialBalances: Record<Denom, number> = {
-  aXOF: 250_000,
-  aEUR: 120,
-  aUSD: 85,
+  EURC: 501.12,
+  USD: 85,
   USDC: 40,
   USDT: 0,
   BTC: 0.0012,
   SOL: 0.8,
 };
 
+const seedXofToEurc = (xof: number) => Math.round((xof / XOF_PER_EUR) * 100) / 100;
+
 const initialTransactions: WalletTransaction[] = [
-  { id: 'tx-1', type: 'deposit', title: 'Dépôt MTN MoMo', detail: 'MTN MoMo · +229 97 00 00 00', amount: 25_000, denom: 'aXOF', date: Date.now() - 3_600_000, status: 'success', hash: '8a2f4c1d0e9b7a6f2d1c0b8e7a6f5d4c3b2a1908172635445566778899aabbcc', fee: 0 },
-  { id: 'tx-2', type: 'send', title: 'Envoyé à @fatou', detail: 'Transfert Ledger X', amount: -12_500, denom: 'aXOF', date: Date.now() - 86_400_000, status: 'success', hash: '95b64c1d0e9b7a6f2d1c0b8e7a6f5d4c3b2a1908172635445566778899aabbcd', fee: 0 },
-  { id: 'tx-3', type: 'convert', title: 'Conversion XOF → EUR', detail: 'Taux garanti · frais 0,5 %', amount: -10_000, denom: 'aXOF', date: Date.now() - 172_800_000, status: 'success', hash: '4c2f4c1d0e9b7a6f2d1c0b8e7a6f5d4c3b2a1908172635445566778899aabbce', fee: 50 },
-  { id: 'tx-4', type: 'card', title: 'Café Cotonou', detail: 'Paiement par carte', amount: -4_500, denom: 'aXOF', date: Date.now() - 259_200_000, status: 'success', hash: '7e8d4c1d0e9b7a6f2d1c0b8e7a6f5d4c3b2a1908172635445566778899aabbcf', fee: 0 },
+  { id: 'tx-1', type: 'deposit', title: 'Dépôt MTN MoMo', detail: 'MTN MoMo · +229 97 00 00 00 · 25 000 XOF', amount: seedXofToEurc(25_000), denom: 'EURC', date: Date.now() - 3_600_000, status: 'success', hash: '8a2f4c1d0e9b7a6f2d1c0b8e7a6f5d4c3b2a1908172635445566778899aabbcc', fee: 0 },
+  { id: 'tx-2', type: 'send', title: 'Envoyé à @fatou', detail: 'Transfert Ledger X · 12 500 XOF', amount: -seedXofToEurc(12_500), denom: 'EURC', date: Date.now() - 86_400_000, status: 'success', hash: '95b64c1d0e9b7a6f2d1c0b8e7a6f5d4c3b2a1908172635445566778899aabbcd', fee: 0 },
+  { id: 'tx-3', type: 'convert', title: 'Conversion XOF → EURC', detail: 'Taux garanti · frais 0,5 % · 10 000 XOF', amount: -seedXofToEurc(10_000), denom: 'EURC', date: Date.now() - 172_800_000, status: 'success', hash: '4c2f4c1d0e9b7a6f2d1c0b8e7a6f5d4c3b2a1908172635445566778899aabbce', fee: seedXofToEurc(50) },
+  { id: 'tx-4', type: 'card', title: 'Café Cotonou', detail: 'Paiement par carte · 4 500 XOF', amount: -seedXofToEurc(4_500), denom: 'EURC', date: Date.now() - 259_200_000, status: 'success', hash: '7e8d4c1d0e9b7a6f2d1c0b8e7a6f5d4c3b2a1908172635445566778899aabbcf', fee: 0 },
 ];
 
 const startingState = {
@@ -117,12 +119,39 @@ export const useWalletStore = create<WalletState>()(
     {
       name: 'ledgerx-wallet-state',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         const state = persisted as WalletState;
         const settings = { ...startingState.settings, ...state.settings };
         if (version < 1) settings.displayCurrency = 'EUR';
         if (version < 2) settings.themeMode = 'dark';
+        if (version < 3) {
+          const oldBalances = (state.balances ?? {}) as Record<string, number>;
+          const balances: Record<Denom, number> = {
+            ...initialBalances,
+            EURC: (oldBalances.aXOF ?? 0) / XOF_PER_EUR + (oldBalances.aEUR ?? 0),
+            USD: oldBalances.aUSD ?? 0,
+            USDC: oldBalances.USDC ?? initialBalances.USDC,
+            USDT: oldBalances.USDT ?? initialBalances.USDT,
+            BTC: oldBalances.BTC ?? initialBalances.BTC,
+            SOL: oldBalances.SOL ?? initialBalances.SOL,
+          };
+          const transactions = (state.transactions ?? []).map((transaction) => {
+            const oldDenom = (transaction as unknown as { denom: string }).denom;
+            if (oldDenom === 'aXOF') {
+              return {
+                ...transaction,
+                amount: transaction.amount / XOF_PER_EUR,
+                denom: 'EURC' as const,
+                fee: transaction.fee / XOF_PER_EUR,
+              };
+            }
+            if (oldDenom === 'aEUR') return { ...transaction, denom: 'EURC' as const };
+            if (oldDenom === 'aUSD') return { ...transaction, denom: 'USD' as const };
+            return transaction;
+          });
+          return { ...state, balances, transactions, settings };
+        }
         return { ...state, settings };
       },
       partialize: ({ hydrated: _hydrated, ...state }) => state,

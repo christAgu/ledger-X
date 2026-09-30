@@ -6,7 +6,8 @@ import { authenticate } from '@/services/auth';
 import { ledgerx } from '@/services/ledgerx';
 import type { CashoutRail, Denom } from '@/services/ledgerx/types';
 import { useWalletStore, verifyPin } from '@/state/wallet';
-import { formatAmount } from '@/utils/format';
+import { formatAmount, formatXof } from '@/utils/format';
+import { eurToXof, valueInXof, xofToEur } from '@/services/rates';
 import { wait } from '@/utils/wait';
 import { fonts, radius, spacing, type Palette } from '@/theme/tokens';
 import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
@@ -15,7 +16,7 @@ import { ProcessingOverlay } from '@/components/OrbitLoader';
 
 type SendMode = '@tag Ledger X' | 'Mobile Money' | 'Compte bancaire';
 const modes: SendMode[] = ['@tag Ledger X', 'Mobile Money', 'Compte bancaire'];
-const denoms: Denom[] = ['aXOF', 'aEUR', 'aUSD', 'USDC', 'USDT', 'BTC', 'SOL'];
+const denoms: Denom[] = ['EURC', 'USD', 'USDC', 'USDT', 'BTC', 'SOL'];
 
 export function SendScreen() {
   const { colors } = useTheme();
@@ -31,8 +32,8 @@ export function SendScreen() {
   const [bankName, setBankName] = useState('');
   const [routing, setRouting] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
-  const [amount, setAmount] = useState('12 500');
-  const [denom, setDenom] = useState<Denom>('aXOF');
+  const [amount, setAmount] = useState('10');
+  const [denom, setDenom] = useState<Denom>('EURC');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
   const [pin, setPin] = useState('');
@@ -166,6 +167,7 @@ export function SendScreen() {
           <Card style={styles.amountCard}>
             <View style={styles.rowBetween}><TextLabel size={12} color={colors.textDim}>Montant</TextLabel><PressableScale onPress={() => setPickerOpen(true)} style={styles.currencyButton}><AssetIcon denom={denom} size={24} /><TextLabel size={12} weight={fonts.bodySemi}>{denom}</TextLabel><ChevronDown size={14} color={colors.textDim} /></PressableScale></View>
             <Input value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0" style={styles.amountInput} />
+            <TextLabel size={11} color={colors.textDim}>≈ {formatXof(valueInXof(value, denom))}</TextLabel>
             <View style={styles.rowBetween}><TextLabel size={11} color={colors.textDim}>Disponible</TextLabel><PressableScale onPress={() => setAmount(String(available))}><TextLabel size={11} color={colors.accent}>{formatAmount(available, denom)} · MAX</TextLabel></PressableScale></View>
           </Card>
           <Card style={styles.feeCard}><ReviewLine label="Frais de transfert" value={fee === 0 ? '0 XOF · Gratuit' : formatAmount(fee, denom)} /><ReviewLine label="Le bénéficiaire reçoit" value={formatAmount(value - fee, denom)} green /></Card>
@@ -220,9 +222,12 @@ export function CashoutScreen() {
   const addTransaction = useWalletStore((state) => state.addTransaction);
   const value = Number(amount.replace(/\s/g, '').replace(',', '.')) || 0;
   const fee = value * 0.01;
+  const availableXof = Math.floor(eurToXof(balances.EURC));
+  const debitBaseUnits = xofToEurcDebitBaseUnits(value);
+  const debitEurc = Number(debitBaseUnits) / 1_000_000;
   const railName = rail === 'mtn-momo' ? 'MTN MoMo' : rail === 'moov-money' ? 'Moov Money' : 'Compte bancaire';
   const submit = async () => {
-    if (value <= 0 || value > balances.aXOF) { setError('Solde insuffisant pour ce retrait.'); return; }
+    if (!Number.isSafeInteger(value) || value <= 0 || debitEurc > balances.EURC) { setError('Solde insuffisant pour ce retrait.'); return; }
     if (await authenticate('Confirmer votre retrait')) await cashout();
     else setPinOpen(true);
   };
@@ -232,7 +237,7 @@ export function CashoutScreen() {
     setError('');
     try {
       const [result] = await Promise.all([
-        ledgerx.signAndBroadcast({ type: 'MsgCashout', denom: 'aXOF', amount: value, rail, destination }),
+        ledgerx.signAndBroadcast({ type: 'MsgCashout', denom: 'EURC', amount: debitEurc, rail, destination }),
         wait(1600),
       ]);
       if (result.status !== 'success') {
@@ -245,8 +250,8 @@ export function CashoutScreen() {
         ? await ledgerx.getBalances(accountAddress).catch(() => ({}))
         : {};
       syncBalances(syncedBalances);
-      if (Object.keys(syncedBalances).length === 0) updateBalance('aXOF', -value);
-      addTransaction({ type: 'cashout', title: `Retrait ${railName}`, detail: destination, amount: -value, denom: 'aXOF', status: 'success', hash: result.txHash, fee });
+      if (Object.keys(syncedBalances).length === 0) updateBalance('EURC', -debitEurc);
+      addTransaction({ type: 'cashout', title: `Retrait ${railName}`, detail: `${destination} · ${formatXof(value)}`, amount: -debitEurc, denom: 'EURC', status: 'success', hash: result.txHash, fee: xofToEur(fee) });
       setStep('success');
     } catch {
       setError('Le retrait a échoué. Vérifiez votre connexion et réessayez.');
@@ -258,7 +263,7 @@ export function CashoutScreen() {
     if (await verifyPin(code)) { setPinError(false); await cashout(); }
     else { setPin(''); setPinError(true); }
   };
-  if (step === 'success') return <Screen><Header title="Retrait confirmé" /><SuccessView title="Retrait effectué" subtitle={`${formatAmount(value - fee, 'aXOF')} envoyés sur ${railName}.`} detail={`Tx ${txShort} · frais réseau offerts`} onDone={() => router.replace('/home')} /></Screen>;
+  if (step === 'success') return <Screen><Header title="Retrait confirmé" /><SuccessView title="Retrait effectué" subtitle={`${formatXof(value - fee)} envoyés sur ${railName}.`} detail={`Tx ${txShort} · frais réseau offerts`} onDone={() => router.replace('/home')} /></Screen>;
   return (
     <Screen scroll style={styles.content}>
       <Header title="Retirer" />
@@ -279,16 +284,16 @@ export function CashoutScreen() {
       ) : step === 'amount' ? (
         <>
           <PageTitle title="Montant du retrait" subtitle={`Vers ${railName} · ${destination}`} />
-          <Card style={styles.amountCard}><TextLabel size={12} color={colors.textDim}>MONTANT EN XOF</TextLabel><Input value={amount} onChangeText={setAmount} keyboardType="number-pad" prefix="XOF" placeholder="0" style={styles.amountInput} /><View style={styles.rowBetween}><TextLabel size={11} color={colors.textDim}>Disponible</TextLabel><TextLabel size={11} color={colors.textMuted}>{formatAmount(balances.aXOF, 'aXOF')}</TextLabel></View></Card>
+          <Card style={styles.amountCard}><TextLabel size={12} color={colors.textDim}>MONTANT EN XOF</TextLabel><Input value={amount} onChangeText={setAmount} keyboardType="number-pad" prefix="XOF" placeholder="0" style={styles.amountInput} /><View style={styles.rowBetween}><TextLabel size={11} color={colors.textDim}>Disponible</TextLabel><TextLabel size={11} color={colors.textMuted}>{formatXof(availableXof)}</TextLabel></View></Card>
           <View style={styles.chips}>{[5000, 10000, 25000, 50000].map((chip) => <PressableScale key={chip} onPress={() => setAmount(chip.toLocaleString('fr-FR'))} style={styles.chip}><TextLabel size={12} color={colors.textMuted}>{chip.toLocaleString('fr-FR')}</TextLabel></PressableScale>)}</View>
-          <Card style={styles.feeCard}><ReviewLine label="Frais de retrait (1 %)" value={formatAmount(fee, 'aXOF')} /><ReviewLine label="Vous recevez" value={formatAmount(value - fee, 'aXOF')} green /></Card>
-          <Button onPress={() => { if (value <= 0 || value > balances.aXOF) setError('Solde insuffisant.'); else { setError(''); setStep('review'); } }}>Continuer</Button>
+          <Card style={styles.feeCard}><ReviewLine label="Frais de retrait (1 %)" value={formatXof(fee)} /><ReviewLine label="Vous recevez" value={formatXof(value - fee)} green /></Card>
+          <Button onPress={() => { if (!Number.isSafeInteger(value) || value <= 0 || debitEurc > balances.EURC) setError('Solde insuffisant.'); else { setError(''); setStep('review'); } }}>Continuer</Button>
           {error ? <TextLabel size={12} color={colors.danger}>{error}</TextLabel> : null}
         </>
       ) : (
         <>
           <PageTitle title="Confirmez votre retrait" subtitle="La demande sera envoyée à votre opérateur." />
-          <Card style={styles.reviewCard}><ReviewLine label="Destination" value={`${railName} · ${destination}`} /><ReviewLine label="Montant" value={formatAmount(value, 'aXOF')} /><ReviewLine label="Frais (1 %)" value={formatAmount(fee, 'aXOF')} /><View style={styles.divider} /><ReviewLine label="Vous recevez" value={formatAmount(value - fee, 'aXOF')} green bold /></Card>
+          <Card style={styles.reviewCard}><ReviewLine label="Destination" value={`${railName} · ${destination}`} /><ReviewLine label="Montant" value={formatXof(value)} /><ReviewLine label="Frais (1 %)" value={formatXof(fee)} /><View style={styles.divider} /><ReviewLine label="Débité" value={formatAmount(debitEurc, 'EURC')} /><ReviewLine label="Vous recevez" value={formatXof(value - fee)} green bold /></Card>
           <Card style={styles.feeHint}><ShieldCheck size={16} color={colors.success} /><TextLabel size={12} color={colors.success}>Frais réseau offerts par le Trésor.</TextLabel></Card>
           {error ? <TextLabel size={12} color={colors.danger}>{error}</TextLabel> : null}
           <Button disabled={loading} onPress={submit}>{loading ? 'Confirmation…' : 'Confirmer le retrait'}</Button>
@@ -314,6 +319,11 @@ function ReviewLine({ label, value, green = false, bold = false }: { label: stri
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
   return <View style={styles.reviewLine}><TextLabel size={13} color={colors.textMuted}>{label}</TextLabel><TextLabel size={13} weight={bold ? fonts.bodyBold : fonts.bodySemi} color={green ? colors.success : colors.text}>{value}</TextLabel></View>;
+}
+
+function xofToEurcDebitBaseUnits(xof: number): bigint {
+  if (!Number.isSafeInteger(xof) || xof <= 0) return 0n;
+  return (BigInt(xof) * 1_000_000_000n + 655_956n) / 655_957n;
 }
 
 const makeStyles = (colors: Palette) => StyleSheet.create({

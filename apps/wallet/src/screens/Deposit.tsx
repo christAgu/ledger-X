@@ -5,7 +5,8 @@ import { Check, ChevronRight, Smartphone, Wallet } from 'lucide-react-native';
 import { requestMomoDeposit, confirmMomoDeposit } from '@/services/rails/momo';
 import { ledgerx } from '@/services/ledgerx';
 import { useWalletStore } from '@/state/wallet';
-import { formatAmount } from '@/utils/format';
+import { formatAmount, formatXof } from '@/utils/format';
+import { xofToEur } from '@/services/rates';
 import { wait } from '@/utils/wait';
 import { fonts, radius, spacing, type Palette } from '@/theme/tokens';
 import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
@@ -22,6 +23,7 @@ export default function Deposit() {
   const [amount, setAmount] = useState('10 000');
   const [phone, setPhone] = useState(useWalletStore.getState().phone);
   const [requestId, setRequestId] = useState('');
+  const [credited, setCredited] = useState(0);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const updateBalance = useWalletStore((state) => state.updateBalance);
@@ -44,7 +46,7 @@ export default function Deposit() {
       const [result] = await Promise.all([
         confirmMomoDeposit(requestId).then(() => ledgerx.deposit({
           address: account.address,
-          denom: 'aXOF',
+          currency: 'XOF',
           amount: value,
           rail: 'mtn-momo',
         })),
@@ -56,13 +58,14 @@ export default function Deposit() {
       }
       const balances = await ledgerx.getBalances(account.address).catch(() => ({}));
       syncBalances(balances);
-      if (Object.keys(balances).length === 0) updateBalance('aXOF', value);
+      if (Object.keys(balances).length === 0) updateBalance('EURC', result.credited);
+      setCredited(result.credited);
       addTransaction({
         type: 'deposit',
         title: 'Dépôt MTN MoMo',
-        detail: `MTN MoMo · ${phone}`,
-        amount: value,
-        denom: 'aXOF',
+        detail: `MTN MoMo · ${phone} · ${formatXof(value)}`,
+        amount: result.credited,
+        denom: 'EURC',
         status: 'success',
         hash: result.txHash,
         fee: 0,
@@ -76,7 +79,7 @@ export default function Deposit() {
   };
 
   if (step === 'success') {
-    return <Screen><Header title="Dépôt terminé" /><SuccessView title="Dépôt réussi !" subtitle={`${formatAmount(value, 'aXOF')} ajoutés à votre solde.`} onDone={() => router.replace('/home')} /></Screen>;
+    return <Screen><Header title="Dépôt terminé" /><SuccessView title="Dépôt réussi !" subtitle={`${formatAmount(credited, 'EURC')} ajoutés à votre solde`} onDone={() => router.replace('/home')} /></Screen>;
   }
   if (step === 'pending') {
     return (
@@ -88,11 +91,11 @@ export default function Deposit() {
           <TextLabel size={14} color={colors.textMuted} style={styles.center}>Une demande MTN MoMo a été envoyée au {phone}.</TextLabel>
           {error ? <TextLabel size={12} color={colors.danger}>{error}</TextLabel> : null}
           <Card style={styles.instruction}><Smartphone size={19} color={colors.warning} /><TextLabel size={13} color={colors.textMuted} style={{ flex: 1 }}>Validez sur votre téléphone avec le code USSD *880#.</TextLabel></Card>
-          <TextLabel size={12} color={colors.textDim}>Montant demandé · {formatAmount(value, 'aXOF')}</TextLabel>
+          <TextLabel size={12} color={colors.textDim}>Montant demandé · {formatXof(value)}</TextLabel>
         </View>
         <Button disabled={loading} onPress={finish}>{loading ? 'Vérification…' : 'J’ai validé le paiement'}</Button>
         <PressableScale onPress={() => setStep('review')} style={styles.cancel}><TextLabel size={13} color={colors.textDim}>Annuler le paiement</TextLabel></PressableScale>
-        <ProcessingOverlay visible={loading} title="Vérification du paiement…" subtitle="Émission de aXOF · MsgMint" />
+        <ProcessingOverlay visible={loading} title="Vérification du paiement…" subtitle="Crédit EURC · MsgMint" />
       </Screen>
     );
   }
@@ -110,12 +113,12 @@ export default function Deposit() {
           </PressableScale>
           <View style={[styles.methodRow, styles.methodDisabled]}><View style={[styles.operatorIcon, styles.moovIcon]}><TextLabel size={12} weight={fonts.bodyBold} color={colors.onPrimary}>Moov</TextLabel></View><View style={{ flex: 1 }}><TextLabel size={15} weight={fonts.bodySemi}>Moov Money</TextLabel><TextLabel size={12} color={disabledTextColor}>Bientôt disponible</TextLabel></View><TextLabel size={10} color={disabledTextColor}>BIENTÔT</TextLabel></View>
           <View style={[styles.methodRow, styles.methodDisabled]}><View style={[styles.operatorIcon, styles.celtiisIcon]}><TextLabel size={12} weight={fonts.bodyBold} color={colors.onPrimary}>C</TextLabel></View><View style={{ flex: 1 }}><TextLabel size={15} weight={fonts.bodySemi}>Celtiis Cash</TextLabel><TextLabel size={12} color={disabledTextColor}>Bientôt disponible</TextLabel></View><TextLabel size={10} color={disabledTextColor}>BIENTÔT</TextLabel></View>
-          <Card style={styles.secureNote}><Wallet size={17} color={colors.accent} /><TextLabel size={12} color={colors.textMuted}>Votre argent est crédité en aXOF sur votre smart account Cosmos.</TextLabel></Card>
+          <Card style={styles.secureNote}><Wallet size={17} color={colors.accent} /><TextLabel size={12} color={colors.textMuted}>Votre argent est converti en EURC au taux fixe de 655,957 XOF par euro.</TextLabel></Card>
         </>
       ) : step === 'amount' ? (
         <>
           <PageTitle title="Montant du dépôt" subtitle="Combien souhaitez-vous recharger ?" />
-          <Card style={styles.amountCard}><TextLabel size={12} color={colors.textDim}>MONTANT</TextLabel><Input value={amount} onChangeText={setAmount} keyboardType="number-pad" prefix="XOF" placeholder="0" style={styles.amountInput} /></Card>
+          <Card style={styles.amountCard}><TextLabel size={12} color={colors.textDim}>MONTANT</TextLabel><Input value={amount} onChangeText={setAmount} keyboardType="number-pad" prefix="XOF" placeholder="0" style={styles.amountInput} /><TextLabel size={12} color={colors.textMuted}>Vous recevez ≈ {formatAmount(xofToEur(value), 'EURC')}</TextLabel><TextLabel size={11} color={colors.textDim}>1 € = 655,957 XOF</TextLabel></Card>
           <View style={styles.chips}>{[5000, 10000, 25000, 50000].map((chip) => <PressableScale key={chip} onPress={() => setAmount(chip.toLocaleString('fr-FR'))} style={styles.chip}><TextLabel size={12} color={colors.textMuted}>{chip.toLocaleString('fr-FR')}</TextLabel></PressableScale>)}</View>
           <TextLabel size={12} color={colors.textDim}>Numéro MTN MoMo</TextLabel>
           <Input value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
@@ -129,11 +132,11 @@ export default function Deposit() {
             <ReviewLine label="Moyen de paiement" value="MTN MoMo" />
             <ReviewLine label="Numéro" value={phone} />
             <View style={styles.divider} />
-            <ReviewLine label="Vous payez" value={formatAmount(value, 'aXOF')} />
+            <ReviewLine label="Vous payez" value={formatXof(value)} />
             <ReviewLine label="Frais" value="0 XOF" green />
-            <ReviewLine label="Vous recevez" value={formatAmount(value, 'aXOF')} bold />
+            <ReviewLine label="Vous recevez" value={`≈ ${formatAmount(xofToEur(value), 'EURC')}`} bold />
           </Card>
-          <Card style={styles.disclaimer}><Check size={16} color={colors.success} /><TextLabel size={12} color={colors.success}>Aucun frais réseau · crédité en aXOF</TextLabel></Card>
+          <Card style={styles.disclaimer}><Check size={16} color={colors.success} /><TextLabel size={12} color={colors.success}>Aucun frais réseau · crédité en EURC</TextLabel></Card>
           <View style={{ marginTop: 'auto' }}><Button disabled={loading} onPress={createRequest}>{loading ? 'Envoi de la demande…' : 'Confirmer et payer'}</Button></View>
         </>
       )}

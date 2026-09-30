@@ -165,10 +165,10 @@ export function AmountText({
 }
 
 const assetColor: Record<Denom, string> = {
-  aXOF: '#F1A132', aEUR: '#2B71F0', aUSD: '#45B989', USDC: '#2775CA', USDT: '#26A17B', BTC: '#F7931A', SOL: '#8B5CF6',
+  EURC: '#2B71F0', USD: '#45B989', USDC: '#2775CA', USDT: '#26A17B', BTC: '#F7931A', SOL: '#8B5CF6',
 };
 const assetIconText: Record<Denom, string> = {
-  aXOF: 'X', aEUR: '€', aUSD: '$', USDC: '◉', USDT: '₮', BTC: '₿', SOL: '◎',
+  EURC: '€', USD: '$', USDC: '◉', USDT: '₮', BTC: '₿', SOL: '◎',
 };
 
 export function AssetIcon({ denom, size = 42 }: { denom: Denom; size?: number }) {
@@ -183,7 +183,7 @@ export function AssetIcon({ denom, size = 42 }: { denom: Denom; size?: number })
 export function AssetRow({ denom, balance, fiat, onPress, hidden = false, index = 0 }: { denom: Denom; balance: number; fiat: string; onPress?: () => void; hidden?: boolean; index?: number }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const names: Record<Denom, string> = { aXOF: 'Franc CFA', aEUR: 'Euro', aUSD: 'Dollar US', USDC: 'USD Coin', USDT: 'Tether', BTC: 'Bitcoin', SOL: 'Solana' };
+  const names: Record<Denom, string> = { EURC: 'Euro · EURC', USD: 'Dollar US', USDC: 'USD Coin', USDT: 'Tether', BTC: 'Bitcoin', SOL: 'Solana' };
   return (
     <Animated.View entering={FadeInDown.delay(index * 45).duration(300)}>
       <PressableScale onPress={onPress} style={styles.assetRow}>

@@ -1,6 +1,13 @@
 # ledgerx
 **ledgerx** is a blockchain built using Cosmos SDK and Tendermint and created with [Ignite CLI](https://ignite.com/cli).
 
+## EURC devnet denomination
+
+User balances on Ledger X are denominated only in `ueurc` (six decimal places),
+displayed as EURC. The devnet treasury can mint and burn this stand-in token.
+In production, Circle issues EURC, so the treasury must transfer tokens from an
+EURC reserve, for example over IBC from Noble, rather than minting them.
+
 ## Get started
 
 ```

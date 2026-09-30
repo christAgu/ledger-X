@@ -14,7 +14,7 @@ import { fonts, radius, spacing, type Palette, withAlpha } from '@/theme/tokens'
 import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { ProcessingOverlay } from '@/components/OrbitLoader';
 
-const denoms: Denom[] = ['aXOF', 'aEUR', 'aUSD', 'USDC', 'USDT', 'BTC', 'SOL'];
+const denoms: Denom[] = ['EURC', 'USD', 'USDC', 'USDT', 'BTC', 'SOL'];
 
 export default function Convert() {
   const { colors } = useTheme();
@@ -22,9 +22,9 @@ export default function Convert() {
   const balances = useWalletStore((state) => state.balances);
   const updateBalance = useWalletStore((state) => state.updateBalance);
   const addTransaction = useWalletStore((state) => state.addTransaction);
-  const [from, setFrom] = useState<Denom>('aXOF');
-  const [to, setTo] = useState<Denom>('aEUR');
-  const [amount, setAmount] = useState('10 000');
+  const [from, setFrom] = useState<Denom>('EURC');
+  const [to, setTo] = useState<Denom>('USDC');
+  const [amount, setAmount] = useState('10');
   const [picker, setPicker] = useState<'from' | 'to' | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
@@ -37,7 +37,7 @@ export default function Convert() {
   const swapStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${rotation.value}deg` }] }));
   const value = Number(amount.replace(/\s/g, '').replace(',', '.')) || 0;
   const quote = useMemo(() => getQuote(from, to, value), [from, to, value]);
-  const names: Record<Denom, string> = { aXOF: 'Franc CFA', aEUR: 'Euro', aUSD: 'Dollar US', USDC: 'USD Coin', USDT: 'Tether', BTC: 'Bitcoin', SOL: 'Solana' };
+  const names: Record<Denom, string> = { EURC: 'Euro · EURC', USD: 'Dollar US', USDC: 'USD Coin', USDT: 'Tether', BTC: 'Bitcoin', SOL: 'Solana' };
   const switchTokens = () => {
     rotation.value = withTiming(rotation.value + 180, { duration: 380 });
     setFrom(to);
@@ -79,7 +79,7 @@ export default function Convert() {
       <View style={styles.tokenStack}>
         <TokenPanel title="Vous envoyez" denom={from} amount={amount} balance={balances[from]} onAmountChange={setAmount} onPress={() => setPicker('from')} onMax={() => setAmount(String(balances[from]))} />
         <Animated.View style={swapStyle}><PressableScale onPress={switchTokens} style={styles.swapButton}><ArrowDownUp size={19} color={colors.onPrimary} /></PressableScale></Animated.View>
-        <TokenPanel title="Vous recevez" denom={to} amount={quote.out.toFixed(to === 'aXOF' ? 0 : 2)} readOnly onPress={() => setPicker('to')} />
+        <TokenPanel title="Vous recevez" denom={to} amount={quote.out.toFixed(2)} readOnly onPress={() => setPicker('to')} />
       </View>
       <Card style={styles.quoteCard}>
         <QuoteRow label="Taux du marché" value={`1 ${from} = ${quote.rate.toFixed(4)} ${to}`} />

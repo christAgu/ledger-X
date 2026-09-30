@@ -28,8 +28,9 @@ npm start
 ```
 
 The HTTP server listens on port 8787 by default. `GET /health` reports the
-configured chain status and height. The chain RPC proxy is available at
-`/rpc` and `/rpc/*`; the chain REST API remains on port 1317.
+configured chain status and height. `GET /v1/config` returns the chain ID,
+treasury address, `ueurc` denom, and fixed `655.957` XOF-per-EUR peg. The chain
+RPC and REST proxies are available at `/rpc/*` and `/rest/*`.
 
 ## Endpoints
 
@@ -38,17 +39,23 @@ configured chain status and height. The chain RPC proxy is available at
   account is the fee granter; registered users need no `uledx`.
 - `GET /v1/tags/:tag` resolves a registered tag. `GET
   /v1/tags/:tag/available` checks availability.
-- `POST /v1/sandbox/deposit` mints a synthetic balance with a generated
-  `sbx-<uuid>` reference while `SANDBOX=1`.
-- `POST /v1/webhooks/deposit` accepts `{ reference, address, denom, amount }`,
-  where `amount` is a decimal string in major currency units. Sign the exact
-  request bytes as
+- `POST /v1/sandbox/deposit` accepts `{ address, currency, amount }` and mints
+  EURC with a generated `sbx-<uuid>` reference while `SANDBOX=1`.
+- `POST /v1/webhooks/deposit` accepts
+  `{ reference, address, currency, amount }`, where `currency` is `XOF` or
+  `EUR`. XOF amounts are integer strings converted at the fixed CFA peg; EUR
+  amounts are decimal strings in major currency units. Successful deposits
+  credit `ueurc`. Sign the exact request bytes as
   `HMAC-SHA256(WEBHOOK_SECRET, "<unix-seconds>.<raw-body>")`, then send the
   lowercase hex digest in `x-ledgerx-signature` and the timestamp in
   `x-ledgerx-timestamp`. Timestamps must be within 300 seconds.
 - `POST /v1/cashouts` accepts a successful transaction hash containing exactly
-  one synthetic-denom `MsgSend` to the treasury and burns that amount. Partner
-  payouts are out of scope.
+  one `ueurc` `MsgSend` to the treasury and burns that amount. The response
+  includes the XOF payout equivalent; partner payouts are out of scope.
+
+The devnet treasury mints and burns `ueurc` as a stand-in. In production, Circle
+issues EURC, so the treasury should transfer EURC from a reserve, for example
+via IBC from Noble, rather than minting it.
 
 All API routes enable CORS. The treasury broadcasts are serialized in-process
 to protect account sequence numbers. The tag registry is persisted at
@@ -63,7 +70,7 @@ printed by `devnet.sh`, then run:
 npm run e2e
 ```
 
-The script registers a fresh account, deposits 5,000 XOF through the sandbox,
-sends 1,000 XOF to Koffi using the treasury fee grant, sends 500 XOF to the
-treasury for cashout, checks the supply reduction, and replays the signed
-deposit webhook to verify idempotency.
+The script registers a fresh account, deposits 5,000 XOF through the sandbox
+and asserts a 7,622,450 `ueurc` credit, sends 1 EURC to Koffi using the treasury
+fee grant, cashes out 0.5 EURC for 327 XOF, checks the supply reduction, and
+replays the signed deposit webhook to verify idempotency.

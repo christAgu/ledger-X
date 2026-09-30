@@ -70,10 +70,8 @@ assert(treasury, "treasury mnemonic did not produce an account");
 const relayerConfig = await requestJson("/v1/config");
 assert(relayerConfig.chainId === chainId, "relayer config returned the wrong chain id");
 assert(relayerConfig.treasuryAddress === treasury.address, "relayer config returned the wrong treasury");
-assert(
-  ["aXOF", "aEUR", "aUSD"].every((denom) => relayerConfig.allowedDenoms.includes(denom)),
-  "relayer config omitted an allowed synthetic denom",
-);
+assert(relayerConfig.denom === "ueurc", "relayer config returned the wrong denom");
+assert(relayerConfig.xofPerEur === "655.957", "relayer config returned the wrong XOF peg");
 const restResponse = await fetch(
   `${relayerUrl}/rest/cosmos/base/tendermint/v1beta1/node_info`,
 );
@@ -85,36 +83,37 @@ const fee = {
   gas: "600000",
   granter: treasury.address,
 };
-const koffiBalanceBefore = BigInt((await client.getBalance(koffiAddress, "aXOF")).amount);
+const koffiBalanceBefore = BigInt((await client.getBalance(koffiAddress, "ueurc")).amount);
 
 const deposit = await requestJson("/v1/sandbox/deposit", {
   address: account.address,
-  denom: "aXOF",
+  currency: "XOF",
   amount: "5000",
-  rail: "mtn_momo",
 });
 assert(deposit.status === "minted", "sandbox deposit was not minted");
-assert((await client.getBalance(account.address, "aXOF")).amount === "5000000000", "deposit balance mismatch");
+assert(deposit.credited.denom === "ueurc", "deposit credited the wrong denom");
+assert(deposit.credited.amount === "7622450", "deposit credited the wrong EURC amount");
+assert((await client.getBalance(account.address, "ueurc")).amount === "7622450", "deposit balance mismatch");
 console.log(`sandbox deposit minted: ${deposit.txHash}`);
 
 const sendToKoffi = await client.sendTokens(
   account.address,
   koffiAddress,
-  [{ denom: "aXOF", amount: "1000000000" }],
+  [{ denom: "ueurc", amount: "1000000" }],
   fee,
   "Ledger X e2e transfer",
 );
 assert(sendToKoffi.code === 0, "feegrant transfer to Koffi failed");
 assert((await client.getBalance(account.address, "uledx")).amount === "0", "user gained uledx");
-const koffiBalanceAfter = BigInt((await client.getBalance(koffiAddress, "aXOF")).amount);
-assert(koffiBalanceAfter - koffiBalanceBefore === 1_000_000_000n, "Koffi balance mismatch");
-console.log(`1000 XOF sent to Koffi with zero uledx: ${sendToKoffi.transactionHash}`);
+const koffiBalanceAfter = BigInt((await client.getBalance(koffiAddress, "ueurc")).amount);
+assert(koffiBalanceAfter - koffiBalanceBefore === 1_000_000n, "Koffi balance mismatch");
+console.log(`1 EURC sent to Koffi with zero uledx: ${sendToKoffi.transactionHash}`);
 
-const supplyBefore = await querySupply("aXOF");
+const supplyBefore = await querySupply("ueurc");
 const sendToTreasury = await client.sendTokens(
   account.address,
   treasury.address,
-  [{ denom: "aXOF", amount: "500000000" }],
+  [{ denom: "ueurc", amount: "500000" }],
   fee,
   "Ledger X cashout e2e",
 );
@@ -125,14 +124,15 @@ const cashout = await requestJson("/v1/cashouts", {
   destination: "+225000000000",
 });
 assert(cashout.status === "burned", "cashout was not burned");
-const supplyAfter = await querySupply("aXOF");
-assert(supplyBefore - supplyAfter === 500000000n, "cashout did not reduce supply by 500 XOF");
-console.log(`cashout burned 500 XOF: ${cashout.burnTxHash}`);
+assert(cashout.payout.currency === "XOF" && cashout.payout.amount === "327", "cashout payout mismatch");
+const supplyAfter = await querySupply("ueurc");
+assert(supplyBefore - supplyAfter === 500_000n, "cashout did not reduce supply by 0.5 EURC");
+console.log(`cashout burned 0.5 EURC for 327 XOF: ${cashout.burnTxHash}`);
 
 const replayBody = JSON.stringify({
   reference: deposit.reference,
   address: account.address,
-  denom: "aXOF",
+  currency: "XOF",
   amount: "5000",
 });
 const timestamp = String(Math.floor(Date.now() / 1000));

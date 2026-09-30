@@ -15,7 +15,7 @@ func TestMintSynthetic(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		f := initFixture(t)
 		server := keeper.NewMsgServerImpl(f.keeper)
-		amount := sdk.NewCoin("aXOF", sdkmath.NewInt(5_000_000))
+		amount := sdk.NewCoin("ueurc", sdkmath.NewInt(5_000_000))
 		_, err := server.MintSynthetic(f.ctx, &types.MsgMintSynthetic{
 			Authority:  f.treasuryAddress,
 			Recipient:  mustAddress(t, f.addressCodec, f.recipient),
@@ -23,8 +23,8 @@ func TestMintSynthetic(t *testing.T) {
 			DepositRef: "deposit-1",
 		})
 		require.NoError(t, err)
-		require.True(t, amount.Amount.Equal(f.bankKeeper.balance(f.recipient, "aXOF")))
-		require.True(t, amount.Amount.Equal(f.bankKeeper.totalSupply("aXOF")))
+		require.True(t, amount.Amount.Equal(f.bankKeeper.balance(f.recipient, "ueurc")))
+		require.True(t, amount.Amount.Equal(f.bankKeeper.totalSupply("ueurc")))
 	})
 
 	t.Run("unauthorized", func(t *testing.T) {
@@ -33,13 +33,13 @@ func TestMintSynthetic(t *testing.T) {
 		_, err := server.MintSynthetic(f.ctx, &types.MsgMintSynthetic{
 			Authority:  f.otherAuthority,
 			Recipient:  mustAddress(t, f.addressCodec, f.recipient),
-			Amount:     sdk.NewCoin("aXOF", sdkmath.NewInt(1)),
+			Amount:     sdk.NewCoin("ueurc", sdkmath.NewInt(1)),
 			DepositRef: "deposit-1",
 		})
 		require.ErrorIs(t, err, types.ErrUnauthorized)
 	})
 
-	for _, denom := range []string{"uledx", "aGBP"} {
+	for _, denom := range []string{"uledx", "aGBP", "aXOF"} {
 		t.Run("disallowed "+denom, func(t *testing.T) {
 			f := initFixture(t)
 			server := keeper.NewMsgServerImpl(f.keeper)
@@ -59,7 +59,7 @@ func TestMintSynthetic(t *testing.T) {
 		msg := &types.MsgMintSynthetic{
 			Authority:  f.treasuryAddress,
 			Recipient:  mustAddress(t, f.addressCodec, f.recipient),
-			Amount:     sdk.NewCoin("aXOF", sdkmath.NewInt(1)),
+			Amount:     sdk.NewCoin("ueurc", sdkmath.NewInt(1)),
 			DepositRef: "deposit-1",
 		}
 		_, err := server.MintSynthetic(f.ctx, msg)
@@ -73,15 +73,15 @@ func TestBurnSynthetic(t *testing.T) {
 	t.Run("success reduces supply", func(t *testing.T) {
 		f := initFixture(t)
 		initial := sdkmath.NewInt(1000)
-		f.bankKeeper.seedBalance(f.treasury, sdk.NewCoin("aXOF", initial))
+		f.bankKeeper.seedBalance(f.treasury, sdk.NewCoin("ueurc", initial))
 		server := keeper.NewMsgServerImpl(f.keeper)
 		_, err := server.BurnSynthetic(f.ctx, &types.MsgBurnSynthetic{
 			Authority:  f.treasuryAddress,
-			Amount:     sdk.NewCoin("aXOF", sdkmath.NewInt(500)),
+			Amount:     sdk.NewCoin("ueurc", sdkmath.NewInt(500)),
 			CashoutRef: "cashout-1",
 		})
 		require.NoError(t, err)
-		require.True(t, sdkmath.NewInt(500).Equal(f.bankKeeper.totalSupply("aXOF")))
+		require.True(t, sdkmath.NewInt(500).Equal(f.bankKeeper.totalSupply("ueurc")))
 	})
 
 	t.Run("unauthorized", func(t *testing.T) {
@@ -89,7 +89,7 @@ func TestBurnSynthetic(t *testing.T) {
 		server := keeper.NewMsgServerImpl(f.keeper)
 		_, err := server.BurnSynthetic(f.ctx, &types.MsgBurnSynthetic{
 			Authority:  f.otherAuthority,
-			Amount:     sdk.NewCoin("aXOF", sdkmath.NewInt(1)),
+			Amount:     sdk.NewCoin("ueurc", sdkmath.NewInt(1)),
 			CashoutRef: "cashout-1",
 		})
 		require.ErrorIs(t, err, types.ErrUnauthorized)
@@ -97,11 +97,11 @@ func TestBurnSynthetic(t *testing.T) {
 
 	t.Run("duplicate cashout reference", func(t *testing.T) {
 		f := initFixture(t)
-		f.bankKeeper.seedBalance(f.treasury, sdk.NewCoin("aXOF", sdkmath.NewInt(1000)))
+		f.bankKeeper.seedBalance(f.treasury, sdk.NewCoin("ueurc", sdkmath.NewInt(1000)))
 		server := keeper.NewMsgServerImpl(f.keeper)
 		msg := &types.MsgBurnSynthetic{
 			Authority:  f.treasuryAddress,
-			Amount:     sdk.NewCoin("aXOF", sdkmath.NewInt(500)),
+			Amount:     sdk.NewCoin("ueurc", sdkmath.NewInt(500)),
 			CashoutRef: "cashout-1",
 		}
 		_, err := server.BurnSynthetic(f.ctx, msg)
@@ -114,8 +114,8 @@ func TestBurnSynthetic(t *testing.T) {
 func TestParamsValidation(t *testing.T) {
 	f := initFixture(t)
 
-	require.NoError(t, types.NewParams(f.treasuryAddress, []string{"aXOF", "aEUR", "aUSD"}).Validate())
-	require.Error(t, types.NewParams("not-bech32", []string{"aXOF"}).Validate())
-	require.Error(t, types.NewParams("", []string{"aXOF", "aXOF"}).Validate())
+	require.NoError(t, types.NewParams(f.treasuryAddress, []string{"ueurc"}).Validate())
+	require.Error(t, types.NewParams("not-bech32", []string{"ueurc"}).Validate())
+	require.Error(t, types.NewParams("", []string{"ueurc", "ueurc"}).Validate())
 	require.Error(t, types.NewParams("", []string{"not valid"}).Validate())
 }
