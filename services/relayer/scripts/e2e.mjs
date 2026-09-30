@@ -67,6 +67,19 @@ const treasuryWallet = await DirectSecp256k1HdWallet.fromMnemonic(treasuryMnemon
 });
 const [treasury] = await treasuryWallet.getAccounts();
 assert(treasury, "treasury mnemonic did not produce an account");
+const relayerConfig = await requestJson("/v1/config");
+assert(relayerConfig.chainId === chainId, "relayer config returned the wrong chain id");
+assert(relayerConfig.treasuryAddress === treasury.address, "relayer config returned the wrong treasury");
+assert(
+  ["aXOF", "aEUR", "aUSD"].every((denom) => relayerConfig.allowedDenoms.includes(denom)),
+  "relayer config omitted an allowed synthetic denom",
+);
+const restResponse = await fetch(
+  `${relayerUrl}/rest/cosmos/base/tendermint/v1beta1/node_info`,
+);
+assert(restResponse.ok, `REST proxy failed: ${restResponse.status}`);
+const nodeInfo = await restResponse.json();
+assert(nodeInfo.default_node_info.network === chainId, "REST proxy returned the wrong chain");
 const fee = {
   amount: [{ denom: "uledx", amount: "1500" }],
   gas: "600000",

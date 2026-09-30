@@ -5,7 +5,7 @@ import { request as httpsRequest } from "node:https";
 import { fromBech32 } from "@cosmjs/encoding";
 import { majorToBaseUnits } from "./amount.js";
 import { RelayerConfig } from "./config.js";
-import { CosmosRelayer, isSyntheticDenom } from "./cosmos.js";
+import { CosmosRelayer, isSyntheticDenom, SYNTHETIC_DENOMS } from "./cosmos.js";
 import { verifyWebhookSignature } from "./hmac.js";
 import { SerialQueue } from "./queue.js";
 import { TagStore } from "./tag-store.js";
@@ -69,7 +69,11 @@ async function handleRequest(
 
   const url = new URL(request.url ?? "/", "http://relayer.local");
   if (url.pathname === "/rpc" || url.pathname.startsWith("/rpc/")) {
-    proxyRpc(request, response, config.chainRpc);
+    proxyRequest(request, response, config.chainRpc, "/rpc", "chain RPC unavailable");
+    return;
+  }
+  if (url.pathname === "/rest" || url.pathname.startsWith("/rest/")) {
+    proxyRequest(request, response, config.chainApi, "/rest", "chain REST API unavailable");
     return;
   }
 
@@ -79,6 +83,15 @@ async function handleRequest(
     } catch {
       sendJson(response, 503, { ok: false, height: 0 });
     }
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/v1/config") {
+    sendJson(response, 200, {
+      chainId: config.chainId,
+      treasuryAddress: await chain.treasuryAddress(),
+      allowedDenoms: SYNTHETIC_DENOMS,
+    });
     return;
   }
 
@@ -413,14 +426,16 @@ function sendJson(response: ServerResponse, status: number, body: unknown): void
   response.end(JSON.stringify(body));
 }
 
-function proxyRpc(
+function proxyRequest(
   request: IncomingMessage,
   response: ServerResponse,
-  chainRpc: string,
+  upstreamBase: string,
+  prefix: string,
+  unavailableMessage: string,
 ): void {
-  const incomingUrl = new URL(request.url ?? "/rpc", "http://relayer.local");
-  const suffix = incomingUrl.pathname.replace(/^\/rpc/, "") || "/";
-  const upstreamUrl = new URL(`${suffix}${incomingUrl.search}`, chainRpc);
+  const incomingUrl = new URL(request.url ?? prefix, "http://relayer.local");
+  const suffix = incomingUrl.pathname.replace(new RegExp(`^${prefix}`), "") || "/";
+  const upstreamUrl = new URL(`${suffix}${incomingUrl.search}`, upstreamBase);
   const transport = upstreamUrl.protocol === "https:" ? httpsRequest : httpRequest;
   const headers = { ...request.headers };
   delete headers.host;
@@ -436,7 +451,7 @@ function proxyRpc(
   );
   upstream.on("error", () => {
     if (!response.headersSent) {
-      sendJson(response, 502, { error: "chain RPC unavailable" });
+      sendJson(response, 502, { error: unavailableMessage });
     } else {
       response.destroy();
     }
