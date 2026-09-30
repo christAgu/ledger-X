@@ -1,27 +1,93 @@
 version: 1
 validation: sovereign
 default_denom: uledx
-accounts: 
-- name: alice
+# INSECURE DEVNET KEYS: these public mnemonics are for local development only.
+accounts:
+- name: validator
   coins:
-  - 20000token
-  - 200000000uledx
-- name: bob
+  - 1000000000uledx
+  mnemonic: cruise gold weird giraffe portion silver banana nice away release area risk circle injury damp bunker nothing solution taste rescue attitude number invite human
+- name: treasury
   coins:
-  - 10000token
-  - 100000000uledx
+  - 1000000000000uledx
+  mnemonic: cargo ramp supreme review change various throw air figure humble soft steel slam pole betray inhale already dentist enough away office apple sample glue
+- name: amina
+  coins:
+  - 2500000000aXOF
+  mnemonic: toe web embody inform keep great rookie return gospel clay beef cotton anger mandate glove equip below ranch tomato girl message garage enter blue
+- name: koffi
+  coins:
+  - 500000000aXOF
+  mnemonic: home canal satisfy ahead egg people tornado predict enlist later middle pistol young unhappy equip mesh quantum drip battle used culture position art way
 client:
   openapi:
     path: docs/static/openapi.json
-faucet:
-  name: bob
-  coins:
-  - 5token
-  - 100000uledx
 validators:
-- name: alice
-  bonded: 100000000uledx
-- name: validator1
-  bonded: 200000000uledx
-- name: validator2
-  bonded: 100000000uledx
+- name: validator
+  bonded: 500000000uledx
+  app:
+    minimum-gas-prices: 0.0025uledx
+    api:
+      enable: true
+      address: tcp://0.0.0.0:1317
+      swagger: true
+      enabled-unsafe-cors: true
+  config:
+    rpc:
+      laddr: tcp://0.0.0.0:26657
+      cors_allowed_origins:
+      - "*"
+genesis:
+  chain_id: ledgerx-devnet-1
+  app_state:
+    bank:
+      denom_metadata:
+      - description: Synthetic West African CFA franc
+        denom_units:
+        - denom: aXOF
+          exponent: 0
+          aliases: []
+        - denom: XOF
+          exponent: 6
+          aliases: []
+        base: aXOF
+        display: XOF
+        name: XOF
+        symbol: XOF
+      - description: Synthetic euro
+        denom_units:
+        - denom: aEUR
+          exponent: 0
+          aliases: []
+        - denom: EUR
+          exponent: 6
+          aliases: []
+        base: aEUR
+        display: EUR
+        name: EUR
+        symbol: EUR
+      - description: Synthetic US dollar
+        denom_units:
+        - denom: aUSD
+          exponent: 0
+          aliases: []
+        - denom: USD
+          exponent: 6
+          aliases: []
+        base: aUSD
+        display: USD
+        name: USD
+        symbol: USD
+    mint:
+      params:
+        mint_denom: uledx
+    staking:
+      params:
+        bond_denom: uledx
+    treasury:
+      params:
+        treasury_address: ledgerx1s39200s6v4c96ml2xzuh389yxpd0guk29xkwk6
+        allowed_denoms:
+        - aXOF
+        - aEUR
+        - aUSD
