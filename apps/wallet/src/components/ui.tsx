@@ -36,7 +36,8 @@ export function TextLabel({
   weight = fonts.body,
   ...props
 }: PropsWithChildren<{ style?: StyleProp<TextStyle>; size?: number; color?: string; weight?: string } & Omit<TextProps, 'style' | 'children'>>) {
-  return <Text {...props} style={[{ color, fontFamily: weight, fontSize: size }, style]}>{children}</Text>;
+  const displayWeight = (weight === fonts.display || weight === fonts.displayBold) && size >= 20;
+  return <Text {...props} style={[{ color, fontFamily: weight, fontSize: size }, displayWeight && { letterSpacing: -size * 0.02 }, style]}>{children}</Text>;
 }
 
 export function PressableScale({ children, style, onPress, disabled, haptic = true, ...props }: PressableProps & { haptic?: boolean }) {
