@@ -62,6 +62,16 @@ export const mockClient: LedgerXClient = {
     await wait(280);
     return !takenTags.has(tag.toLowerCase().replace(/^@/, ''));
   },
+  async getBalances() {
+    return {};
+  },
+  async deposit({ address, denom, amount, rail }): Promise<TxResult> {
+    await wait(600 + Math.floor(Math.random() * 600));
+    txSequence += 1;
+    height += 1;
+    const txHash = createMockHash(`${txSequence}:${height}:${Date.now()}:${address}:${denom}:${amount}:${rail}`);
+    return { txHash, height, gasUsed: 68421, feePaidBy: 'treasury-feegrant', status: 'success' };
+  },
   async signAndBroadcast(_msg: LedgerXMsg): Promise<TxResult> {
     await wait(600 + Math.floor(Math.random() * 600));
     txSequence += 1;

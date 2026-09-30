@@ -1,3 +1,4 @@
+import '../polyfills';
 import { useEffect, useRef } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 import { Stack, router } from 'expo-router';
@@ -7,7 +8,8 @@ import { Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold } from '@exp
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useWalletStore } from '@/state/wallet';
-import { colors } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
+import { type Palette } from '@/theme/tokens';
 
 function BackgroundLock() {
   const backgroundedAt = useRef<number | null>(null);
@@ -25,6 +27,8 @@ function BackgroundLock() {
 }
 
 export default function RootLayout() {
+  const { mode, colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [loaded] = useFonts({
     Manrope_600SemiBold,
     Manrope_700Bold,
@@ -39,7 +43,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <BackgroundLock />
-      <StatusBar style="light" />
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'fade' }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(onboarding)" />
@@ -54,7 +58,7 @@ export default function RootLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   loading: { flex: 1, backgroundColor: colors.bg },
 });

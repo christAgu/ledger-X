@@ -22,7 +22,9 @@ import { ChevronLeft, Copy, Eye, EyeOff, type LucideIcon } from 'lucide-react-na
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Platform } from 'react-native';
-import { colors, fonts, radius, spacing } from '@/theme/tokens';
+import { fonts, radius, spacing, type Palette } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
+import { SuccessBurst } from '@/components/SuccessBurst';
 import type { Denom } from '@/services/ledgerx/types';
 import { formatAmount } from '@/utils/format';
 
@@ -32,12 +34,13 @@ export function TextLabel({
   children,
   style,
   size = 14,
-  color = colors.text,
+  color,
   weight = fonts.body,
   ...props
 }: PropsWithChildren<{ style?: StyleProp<TextStyle>; size?: number; color?: string; weight?: string } & Omit<TextProps, 'style' | 'children'>>) {
+  const { colors } = useTheme();
   const displayWeight = (weight === fonts.display || weight === fonts.displayBold) && size >= 20;
-  return <Text {...props} style={[{ color, fontFamily: weight, fontSize: size }, displayWeight && { letterSpacing: -size * 0.02 }, style]}>{children}</Text>;
+  return <Text {...props} style={[{ color: color ?? colors.text, fontFamily: weight, fontSize: size }, displayWeight && { letterSpacing: -size * 0.02 }, style]}>{children}</Text>;
 }
 
 export function PressableScale({ children, style, onPress, disabled, haptic = true, ...props }: PressableProps & { haptic?: boolean }) {
@@ -73,6 +76,8 @@ type ButtonProps = PropsWithChildren<{
 }>;
 
 export function Button({ children, onPress, kind = 'primary', disabled = false, style }: ButtonProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <PressableScale
       accessibilityRole="button"
@@ -86,12 +91,13 @@ export function Button({ children, onPress, kind = 'primary', disabled = false, 
         disabled && styles.buttonDisabled,
         style,
       ]}>
-      <TextLabel size={15} weight={fonts.bodyBold} color={kind === 'ghost' ? colors.accent : colors.text}>{children}</TextLabel>
+      <TextLabel size={15} weight={fonts.bodyBold} color={kind === 'ghost' ? colors.accent : kind === 'primary' ? colors.onPrimary : colors.text}>{children}</TextLabel>
     </PressableScale>
   );
 }
 
 export function Card({ children, style }: PropsWithChildren<{ style?: StyleProp<ViewStyle> }>) {
+  const styles = useThemedStyles(makeStyles);
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
@@ -103,6 +109,8 @@ export function Screen({
   tabBarClearance = false,
   style,
 }: PropsWithChildren<{ overlay?: ReactNode; scroll?: boolean; gradient?: boolean; tabBarClearance?: boolean; style?: StyleProp<ViewStyle> }>) {
+  const { mode, colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const content = scroll ? (
     <ScrollView contentContainerStyle={[styles.screenContent, style, tabBarClearance && { paddingBottom: 84 + Math.max(insets.bottom, 10) }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -114,7 +122,11 @@ export function Screen({
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       {gradient ? (
-        <LinearGradient colors={['#143A79', '#081C3C', colors.bg]} locations={[0, 0.55, 1]} style={StyleSheet.absoluteFill} />
+        <LinearGradient
+          colors={mode === 'light' ? ['#E6EEFF', '#F0F4FC', colors.bg] : ['#0F2E63', '#081C3C', colors.bg]}
+          locations={[0, 0.55, 1]}
+          style={StyleSheet.absoluteFill}
+        />
       ) : null}
       {content}
       {overlay}
@@ -123,6 +135,8 @@ export function Screen({
 }
 
 export function Header({ title, right, back = true }: { title: string; right?: React.ReactNode; back?: boolean }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.header}>
       {back ? (
@@ -158,6 +172,7 @@ const assetIconText: Record<Denom, string> = {
 };
 
 export function AssetIcon({ denom, size = 42 }: { denom: Denom; size?: number }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.assetIcon, { width: size, height: size, borderRadius: size / 2, backgroundColor: assetColor[denom] }]}>
       <TextLabel size={size * 0.48} weight={fonts.displayBold}>{assetIconText[denom]}</TextLabel>
@@ -166,6 +181,8 @@ export function AssetIcon({ denom, size = 42 }: { denom: Denom; size?: number })
 }
 
 export function AssetRow({ denom, balance, fiat, onPress, hidden = false, index = 0 }: { denom: Denom; balance: number; fiat: string; onPress?: () => void; hidden?: boolean; index?: number }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const names: Record<Denom, string> = { aXOF: 'Franc CFA', aEUR: 'Euro', aUSD: 'Dollar US', USDC: 'USD Coin', USDT: 'Tether', BTC: 'Bitcoin', SOL: 'Solana' };
   return (
     <Animated.View entering={FadeInDown.delay(index * 45).duration(300)}>
@@ -185,15 +202,19 @@ export function AssetRow({ denom, balance, fiat, onPress, hidden = false, index 
 }
 
 export function QuickAction({ label, icon: Icon, onPress, primary = false }: { label: string; icon: LucideIcon; onPress: () => void; primary?: boolean }) {
+  const { mode, colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <PressableScale onPress={onPress} style={styles.quickAction}>
-      <View style={[styles.quickCircle, primary && styles.quickPrimary]}><Icon size={21} color={primary ? colors.text : colors.accent} strokeWidth={2} /></View>
-      <TextLabel size={11} color={colors.textMuted} style={styles.quickLabel}>{label}</TextLabel>
+      <View style={[styles.quickCircle, primary && styles.quickPrimary]}><Icon size={21} color={primary ? colors.onPrimary : colors.text} strokeWidth={2} /></View>
+      <TextLabel size={11} weight={fonts.bodySemi} color={primary && mode === 'dark' ? colors.onPrimary : colors.text} style={styles.quickLabel}>{label}</TextLabel>
     </PressableScale>
   );
 }
 
 export function SegmentedControl({ options, selected, onSelect }: { options: string[]; selected: string; onSelect: (value: string) => void }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.segment}>
       {options.map((option) => (
@@ -206,6 +227,8 @@ export function SegmentedControl({ options, selected, onSelect }: { options: str
 }
 
 export function Sheet({ visible, title, onClose, children }: PropsWithChildren<{ visible: boolean; title: string; onClose: () => void }>) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.sheetBackdrop} onPress={onClose}>
@@ -225,6 +248,7 @@ export function Sheet({ visible, title, onClose, children }: PropsWithChildren<{
 }
 
 export function Toast({ message, visible, style }: { message: string; visible: boolean; style?: StyleProp<ViewStyle> }) {
+  const styles = useThemedStyles(makeStyles);
   if (!visible) return null;
   return (
     <Animated.View entering={FadeInUp.duration(180)} style={[styles.toast, style]}>
@@ -234,6 +258,7 @@ export function Toast({ message, visible, style }: { message: string; visible: b
 }
 
 export function PinPad({ value, onChange, onComplete, error = false }: { value: string; onChange: (value: string) => void; onComplete?: (value: string) => void; error?: boolean }) {
+  const styles = useThemedStyles(makeStyles);
   const press = (digit: string) => {
     if (digit === '⌫') { onChange(value.slice(0, -1)); return; }
     if (value.length >= 6) return;
@@ -258,6 +283,7 @@ export function PinPad({ value, onChange, onComplete, error = false }: { value: 
 }
 
 export function OtpInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View>
       <TextInput
@@ -281,18 +307,23 @@ export function OtpInput({ value, onChange }: { value: string; onChange: (value:
 }
 
 export function SuccessView({ title, subtitle, detail, onDone }: { title: string; subtitle: string; detail?: string; onDone: () => void }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.successView}>
-      <Animated.View entering={FadeInDown.springify()} style={styles.successRing}><TextLabel size={40} weight={fonts.displayBold} color={colors.success}>✓</TextLabel></Animated.View>
-      <TextLabel size={26} weight={fonts.displayBold} style={styles.center}>{title}</TextLabel>
-      <TextLabel size={14} color={colors.textMuted} style={styles.center}>{subtitle}</TextLabel>
-      {detail ? <TextLabel size={11} color={colors.textDim} style={styles.center}>{detail}</TextLabel> : null}
-      <Button onPress={onDone} style={styles.fullButton}>Terminé</Button>
+      <View style={styles.successBurst}><SuccessBurst /></View>
+      <Animated.View entering={FadeInDown.delay(650).springify()}><TextLabel size={26} weight={fonts.displayBold} style={styles.center}>{title}</TextLabel></Animated.View>
+      <Animated.View entering={FadeInDown.delay(750).springify()}><TextLabel size={14} color={colors.textMuted} style={styles.center}>{subtitle}</TextLabel></Animated.View>
+      {detail ? <Animated.View entering={FadeInDown.delay(850).springify()}><TextLabel size={11} color={colors.textDim} style={styles.center}>{detail}</TextLabel></Animated.View> : null}
+      <Animated.View entering={FadeInUp.delay(950)} style={styles.fullButtonWrapper}>
+        <Button onPress={onDone} style={styles.fullButton}>Terminé</Button>
+      </Animated.View>
     </View>
   );
 }
 
 export function StepIndicator({ step, total }: { step: number; total: number }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.stepRow}>
       {Array.from({ length: total }, (_, index) => <View key={index} style={[styles.stepLine, index <= step && styles.stepLineActive]} />)}
@@ -301,6 +332,8 @@ export function StepIndicator({ step, total }: { step: number; total: number }) 
 }
 
 export function SwitchRow({ title, subtitle, value, onValueChange }: { title: string; subtitle?: string; value: boolean; onValueChange: (value: boolean) => void }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <PressableScale onPress={() => onValueChange(!value)} style={styles.switchRow}>
       <View style={styles.assetName}>
@@ -313,6 +346,7 @@ export function SwitchRow({ title, subtitle, value, onValueChange }: { title: st
 }
 
 export function Skeleton({ width = '100%', height = 18 }: { width?: number | `${number}%`; height?: number }) {
+  const { colors } = useTheme();
   const opacity = useSharedValue(0.4);
   const shimmerStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   useEffect(() => {
@@ -323,6 +357,8 @@ export function Skeleton({ width = '100%', height = 18 }: { width?: number | `${
 }
 
 export function CopyButton({ value, onCopy }: { value: string; onCopy: (value: string) => void }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return <PressableScale onPress={() => onCopy(value)} style={styles.copyButton}><Copy color={colors.accent} size={17} /></PressableScale>;
 }
 
@@ -339,6 +375,8 @@ export function Input({
   containerStyle,
   ...props
 }: React.ComponentProps<typeof TextInput> & { prefix?: string; containerStyle?: StyleProp<ViewStyle> }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [focused, setFocused] = useState(false);
   return (
     <View style={[styles.inputWrap, focused && styles.inputWrapFocused, containerStyle]}>
@@ -361,6 +399,8 @@ export function Input({
 }
 
 export function PageTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Animated.View entering={FadeInDown.duration(260)} style={styles.pageTitle}>
       <TextLabel size={27} weight={fonts.displayBold}>{title}</TextLabel>
@@ -370,15 +410,18 @@ export function PageTitle({ title, subtitle }: { title: string; subtitle?: strin
 }
 
 export function LoadingButton({ label, loading, onPress }: { label: string; loading: boolean; onPress: () => void }) {
-  return <Button onPress={onPress} disabled={loading}>{loading ? <ActivityIndicator color={colors.text} /> : label}</Button>;
+  const { colors } = useTheme();
+  return <Button onPress={onPress} disabled={loading}>{loading ? <ActivityIndicator color={colors.onPrimary} /> : label}</Button>;
 }
 
 export function EyeToggle({ hidden, onPress }: { hidden: boolean; onPress: () => void }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const Icon = hidden ? Eye : EyeOff;
   return <PressableScale onPress={onPress} style={styles.iconButton}><Icon size={19} color={colors.textMuted} /></PressableScale>;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   screenContent: { paddingHorizontal: spacing(5), paddingTop: spacing(3), paddingBottom: spacing(7), gap: spacing(4) },
   flexContent: { flex: 1 },
@@ -396,13 +439,13 @@ const styles = StyleSheet.create({
   assetName: { flex: 1, gap: 4 },
   assetAmount: { alignItems: 'flex-end', gap: 4 },
   quickAction: { alignItems: 'center', width: 66, gap: spacing(1.5) },
-  quickCircle: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primarySoft },
-  quickPrimary: { backgroundColor: colors.primary },
+  quickCircle: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgElevated, borderWidth: 1, borderColor: colors.border },
+  quickPrimary: { backgroundColor: colors.primary, borderColor: colors.primary },
   quickLabel: { textAlign: 'center', minHeight: 26 },
-  segment: { flexDirection: 'row', padding: 4, backgroundColor: colors.bgElevated, borderRadius: radius.md, gap: 3 },
+  segment: { flexDirection: 'row', padding: 4, backgroundColor: colors.segmentTrack, borderRadius: radius.md, gap: 3 },
   segmentItem: { flex: 1, minHeight: 39, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, paddingHorizontal: 6 },
   segmentSelected: { backgroundColor: colors.surface },
-  sheetBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(1,7,20,0.75)' },
+  sheetBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.overlay },
   sheet: { backgroundColor: colors.bgElevated, paddingHorizontal: spacing(5), paddingTop: spacing(2), paddingBottom: spacing(7), borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, borderColor: colors.border, borderWidth: 1, maxHeight: '86%' },
   sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: spacing(4) },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing(4) },
@@ -419,9 +462,10 @@ const styles = StyleSheet.create({
   otpBox: { width: 44, height: 54, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   otpActive: { borderColor: colors.accent },
   successView: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing(4) },
-  successRing: { width: 96, height: 96, borderRadius: 48, borderWidth: 1, borderColor: colors.success, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(61,220,151,0.12)', marginBottom: spacing(2) },
+  successBurst: { marginBottom: spacing(2) },
   center: { textAlign: 'center' },
   fullButton: { width: '100%', marginTop: spacing(4) },
+  fullButtonWrapper: { width: '100%' },
   stepRow: { flexDirection: 'row', gap: 6 },
   stepLine: { flex: 1, height: 3, borderRadius: 2, backgroundColor: colors.surfaceAlt },
   stepLineActive: { backgroundColor: colors.primary },
@@ -429,7 +473,7 @@ const styles = StyleSheet.create({
   switch: { width: 48, height: 28, borderRadius: 14, backgroundColor: colors.surfaceAlt, justifyContent: 'center', padding: 3 },
   switchActive: { backgroundColor: colors.primary },
   switchKnob: { width: 22, height: 22, backgroundColor: colors.textMuted, borderRadius: 11 },
-  switchKnobActive: { alignSelf: 'flex-end', backgroundColor: colors.text },
+  switchKnobActive: { alignSelf: 'flex-end', backgroundColor: colors.onPrimary },
   copyButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
   inputWrap: { minHeight: 54, paddingHorizontal: spacing(3), borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
   inputWrapFocused: { borderColor: colors.primary },

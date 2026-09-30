@@ -3,3 +3,9 @@ node_modules/
 dist/
 web-build/
 .DS_Store
+/chain/build/
+/chain/data/
+/chain/ledgerxd
+/services/relayer/node_modules/
+/services/relayer/data/
+**/.env

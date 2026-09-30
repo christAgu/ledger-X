@@ -36,3 +36,17 @@ npx expo start
 ```
 
 Scannez le QR code avec Expo Go pour lancer l'application sur votre appareil.
+
+## Chain devnet
+
+La chaîne Cosmos SDK locale et le service relayer sont documentés dans
+[`services/relayer/README.md`](services/relayer/README.md). Pour démarrer le
+validateur de développement (clés explicitement non sécurisées) :
+
+```sh
+./chain/scripts/devnet.sh
+```
+
+Le script imprime les adresses du trésor, d’Amina et de Koffi. Les endpoints
+locaux sont CometBFT RPC `http://localhost:26657`, REST `http://localhost:1317`
+et relayer `http://localhost:8787`.

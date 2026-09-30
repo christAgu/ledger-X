@@ -8,7 +8,8 @@ import type { CashoutRail, Denom } from '@/services/ledgerx/types';
 import { useWalletStore, verifyPin } from '@/state/wallet';
 import { formatAmount } from '@/utils/format';
 import { wait } from '@/utils/wait';
-import { colors, fonts, radius, spacing } from '@/theme/tokens';
+import { fonts, radius, spacing, type Palette } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { AssetIcon, Button, Card, Header, Input, PageTitle, PinPad, PressableScale, Screen, SegmentedControl, Sheet, StepIndicator, SuccessView, TextLabel } from '@/components/ui';
 import { ProcessingOverlay } from '@/components/OrbitLoader';
 
@@ -17,6 +18,8 @@ const modes: SendMode[] = ['@tag Ledger X', 'Mobile Money', 'Compte bancaire'];
 const denoms: Denom[] = ['aXOF', 'aEUR', 'aUSD', 'USDC', 'USDT', 'BTC', 'SOL'];
 
 export function SendScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [mode, setMode] = useState<SendMode>('@tag Ledger X');
   const [step, setStep] = useState<'destination' | 'amount' | 'review' | 'success'>('destination');
   const [tag, setTag] = useState('fatou');
@@ -39,6 +42,7 @@ export function SendScreen() {
   const [txShort, setTxShort] = useState('');
   const balances = useWalletStore((state) => state.balances);
   const updateBalance = useWalletStore((state) => state.updateBalance);
+  const syncBalances = useWalletStore((state) => state.syncBalances);
   const addTransaction = useWalletStore((state) => state.addTransaction);
   const value = Number(amount.replace(/\s/g, '').replace(',', '.')) || 0;
   const fee = mode === '@tag Ledger X' ? 0 : mode === 'Mobile Money' ? value * 0.01 : 500;
@@ -73,24 +77,46 @@ export function SendScreen() {
     else setPinOpen(true);
   };
   const send = async () => {
-    const destination = resolved?.address ?? 'ledgerx1q9p8v6d4c2x7m3n5k8h0t6w4s2j9p7f3d5g1c';
+    const destination = mode === '@tag Ledger X'
+      ? resolved?.address ?? ''
+      : mode === 'Mobile Money'
+        ? phone
+        : country === 'France' ? iban.replace(/\s/g, '') : `${routing}:${accountNumber}`;
     setPinOpen(false);
     setLoading(true);
-    const [result] = await Promise.all([ledgerx.signAndBroadcast({ type: 'MsgSend', toAddress: destination, denom, amount: value, memo: mode }), wait(1600)]);
-    setTxShort(`${result.txHash.slice(0, 8)}…${result.txHash.slice(-6)}`);
-    updateBalance(denom, -value);
-    addTransaction({
-      type: 'send',
-      title: mode === '@tag Ledger X' ? `Envoyé à @${tag}` : mode === 'Mobile Money' ? `Envoi ${operator}` : 'Virement bancaire',
-      detail: mode === '@tag Ledger X' ? `${resolved?.displayName ?? tag} · Ledger X` : mode === 'Mobile Money' ? `${operator} · ${phone}` : `${country} · ${bankName}`,
-      amount: -value,
-      denom,
-      status: 'success',
-      hash: result.txHash,
-      fee,
-    });
-    setLoading(false);
-    setStep('success');
+    setError('');
+    try {
+      const [result] = await Promise.all([
+        ledgerx.signAndBroadcast({ type: 'MsgSend', toAddress: destination, denom, amount: value, memo: mode }),
+        wait(1600),
+      ]);
+      if (result.status !== 'success') {
+        setError('Le transfert a échoué. Vérifiez votre solde et réessayez.');
+        return;
+      }
+      setTxShort(`${result.txHash.slice(0, 8)}…${result.txHash.slice(-6)}`);
+      const accountAddress = useWalletStore.getState().account?.address;
+      const syncedBalances = accountAddress
+        ? await ledgerx.getBalances(accountAddress).catch(() => ({}))
+        : {};
+      syncBalances(syncedBalances);
+      if (Object.keys(syncedBalances).length === 0) updateBalance(denom, -value);
+      addTransaction({
+        type: 'send',
+        title: mode === '@tag Ledger X' ? `Envoyé à @${tag}` : mode === 'Mobile Money' ? `Envoi ${operator}` : 'Virement bancaire',
+        detail: mode === '@tag Ledger X' ? `${resolved?.displayName ?? tag} · Ledger X` : mode === 'Mobile Money' ? `${operator} · ${phone}` : `${country} · ${bankName}`,
+        amount: -value,
+        denom,
+        status: 'success',
+        hash: result.txHash,
+        fee,
+      });
+      setStep('success');
+    } catch {
+      setError('Le transfert a échoué. Vérifiez votre connexion et réessayez.');
+    } finally {
+      setLoading(false);
+    }
   };
   const submitPin = async (code: string) => {
     if (await verifyPin(code)) { setPinError(false); await send(); }
@@ -161,6 +187,7 @@ export function SendScreen() {
             <ReviewLine label="Total débité" value={formatAmount(value, denom)} bold />
           </Card>
           <Card style={styles.feeHint}><ShieldCheck size={16} color={colors.success} /><TextLabel size={12} color={colors.success}>Transaction signée par votre smart account x/auth.</TextLabel></Card>
+          {error ? <TextLabel size={12} color={colors.danger}>{error}</TextLabel> : null}
           <View style={{ marginTop: 'auto' }}><Button disabled={loading} onPress={submit}>{loading ? 'Confirmation…' : 'Confirmer l’envoi'}</Button></View>
         </>
       )}
@@ -175,6 +202,8 @@ export function SendScreen() {
 }
 
 export function CashoutScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [rail, setRail] = useState<CashoutRail>('mtn-momo');
   const [step, setStep] = useState<'destination' | 'amount' | 'review' | 'success'>('destination');
   const [destination, setDestination] = useState(useWalletStore.getState().phone);
@@ -187,6 +216,7 @@ export function CashoutScreen() {
   const [txShort, setTxShort] = useState('');
   const balances = useWalletStore((state) => state.balances);
   const updateBalance = useWalletStore((state) => state.updateBalance);
+  const syncBalances = useWalletStore((state) => state.syncBalances);
   const addTransaction = useWalletStore((state) => state.addTransaction);
   const value = Number(amount.replace(/\s/g, '').replace(',', '.')) || 0;
   const fee = value * 0.01;
@@ -199,12 +229,30 @@ export function CashoutScreen() {
   const cashout = async () => {
     setPinOpen(false);
     setLoading(true);
-    const [result] = await Promise.all([ledgerx.signAndBroadcast({ type: 'MsgCashout', denom: 'aXOF', amount: value, rail, destination }), wait(1600)]);
-    setTxShort(`${result.txHash.slice(0, 8)}…${result.txHash.slice(-6)}`);
-    updateBalance('aXOF', -value);
-    addTransaction({ type: 'cashout', title: `Retrait ${railName}`, detail: destination, amount: -value, denom: 'aXOF', status: 'success', hash: result.txHash, fee });
-    setLoading(false);
-    setStep('success');
+    setError('');
+    try {
+      const [result] = await Promise.all([
+        ledgerx.signAndBroadcast({ type: 'MsgCashout', denom: 'aXOF', amount: value, rail, destination }),
+        wait(1600),
+      ]);
+      if (result.status !== 'success') {
+        setError('Le retrait a échoué. Vérifiez votre solde et réessayez.');
+        return;
+      }
+      setTxShort(`${result.txHash.slice(0, 8)}…${result.txHash.slice(-6)}`);
+      const accountAddress = useWalletStore.getState().account?.address;
+      const syncedBalances = accountAddress
+        ? await ledgerx.getBalances(accountAddress).catch(() => ({}))
+        : {};
+      syncBalances(syncedBalances);
+      if (Object.keys(syncedBalances).length === 0) updateBalance('aXOF', -value);
+      addTransaction({ type: 'cashout', title: `Retrait ${railName}`, detail: destination, amount: -value, denom: 'aXOF', status: 'success', hash: result.txHash, fee });
+      setStep('success');
+    } catch {
+      setError('Le retrait a échoué. Vérifiez votre connexion et réessayez.');
+    } finally {
+      setLoading(false);
+    }
   };
   const submitPin = async (code: string) => {
     if (await verifyPin(code)) { setPinError(false); await cashout(); }
@@ -242,6 +290,7 @@ export function CashoutScreen() {
           <PageTitle title="Confirmez votre retrait" subtitle="La demande sera envoyée à votre opérateur." />
           <Card style={styles.reviewCard}><ReviewLine label="Destination" value={`${railName} · ${destination}`} /><ReviewLine label="Montant" value={formatAmount(value, 'aXOF')} /><ReviewLine label="Frais (1 %)" value={formatAmount(fee, 'aXOF')} /><View style={styles.divider} /><ReviewLine label="Vous recevez" value={formatAmount(value - fee, 'aXOF')} green bold /></Card>
           <Card style={styles.feeHint}><ShieldCheck size={16} color={colors.success} /><TextLabel size={12} color={colors.success}>Frais réseau offerts par le Trésor.</TextLabel></Card>
+          {error ? <TextLabel size={12} color={colors.danger}>{error}</TextLabel> : null}
           <Button disabled={loading} onPress={submit}>{loading ? 'Confirmation…' : 'Confirmer le retrait'}</Button>
         </>
       )}
@@ -256,14 +305,18 @@ export function CashoutScreen() {
 }
 
 function DestinationCard({ active, icon: Icon, title, subtitle, onPress }: { active: boolean; icon: LucideIcon; title: string; subtitle: string; onPress: () => void }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return <PressableScale onPress={onPress} style={[styles.destinationCard, active && styles.destinationActive]}><View style={styles.destinationIcon}><Icon size={18} color={colors.accent} /></View><View style={{ flex: 1, gap: 4 }}><TextLabel size={14} weight={fonts.bodySemi}>{title}</TextLabel><TextLabel size={11} color={colors.textDim}>{subtitle}</TextLabel></View>{active ? <CircleDollarSign size={19} color={colors.accent} /> : null}</PressableScale>;
 }
 
 function ReviewLine({ label, value, green = false, bold = false }: { label: string; value: string; green?: boolean; bold?: boolean }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return <View style={styles.reviewLine}><TextLabel size={13} color={colors.textMuted}>{label}</TextLabel><TextLabel size={13} weight={bold ? fonts.bodyBold : fonts.bodySemi} color={green ? colors.success : colors.text}>{value}</TextLabel></View>;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   content: { paddingTop: spacing(1), gap: spacing(3) },
   fieldLabel: { marginTop: spacing(1) },
   contactRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: spacing(2), borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
@@ -279,7 +332,7 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: colors.border },
   center: { textAlign: 'center', marginBottom: spacing(3) },
   destinationCard: { minHeight: 74, flexDirection: 'row', alignItems: 'center', gap: spacing(2), borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: spacing(3) },
-  destinationActive: { borderColor: colors.primary, backgroundColor: '#102752' },
+  destinationActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   destinationIcon: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 21, backgroundColor: colors.primarySoft },
   chips: { flexDirection: 'row', gap: 8 },
   chip: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: radius.pill, backgroundColor: colors.surfaceAlt },

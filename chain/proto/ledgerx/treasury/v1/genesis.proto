@@ -1,0 +1,19 @@
+syntax = "proto3";
+package ledgerx.treasury.v1;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "ledgerx/treasury/v1/params.proto";
+
+option go_package = "ledgerx/x/treasury/types";
+
+// GenesisState defines the treasury module's genesis state.
+message GenesisState {
+  // params defines all the parameters of the module.
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated string deposit_refs = 2;
+  repeated string cashout_refs = 3;
+}

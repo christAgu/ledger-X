@@ -6,13 +6,16 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { Copy, CreditCard, Globe, LockKeyhole, Nfc, ShieldCheck, Snowflake, type LucideIcon } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { authenticate } from '@/services/auth';
-import { colors, fonts, radius, spacing } from '@/theme/tokens';
+import { fonts, radius, spacing, type Palette } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { useWalletStore, verifyPin } from '@/state/wallet';
 import { Button, Card as Surface, Header, PinPad, PressableScale, Screen, Sheet, TextLabel, Toast } from '@/components/ui';
 
 const limits = [100_000, 250_000, 500_000, 1_000_000];
 
 export default function CardScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const card = useWalletStore((state) => state.card);
   const updateCard = useWalletStore((state) => state.updateCard);
   const [revealed, setRevealed] = useState(false);
@@ -73,29 +76,29 @@ export default function CardScreen() {
           <Image source={require('@/assets/brand/acxa-mark.png')} style={styles.cardWatermark} resizeMode="contain" />
           {!flipped ? (
             <>
-              <View style={styles.cardTop}><TextLabel size={17} weight={fonts.displayBold}>Ledger <TextLabel size={17} weight={fonts.displayBold} color={colors.accent}>X</TextLabel></TextLabel><TextLabel size={9} color={colors.textMuted} weight={fonts.bodySemi}>VIRTUAL</TextLabel></View>
+              <View style={styles.cardTop}><TextLabel size={17} weight={fonts.displayBold} color={colors.onPrimary}>Ledger <TextLabel size={17} weight={fonts.displayBold} color={colors.onPrimary}>X</TextLabel></TextLabel><TextLabel size={9} color="rgba(255,255,255,0.72)" weight={fonts.bodySemi}>VIRTUAL</TextLabel></View>
               <View style={styles.cardChip}><View /><View /><View /><View /></View>
               {revealed ? (
                 <View style={styles.panRow}>
-                  <TextLabel size={19} weight={fonts.display} style={styles.panText}>{card.pan}</TextLabel>
-                  <PressableScale accessibilityRole="button" accessibilityLabel="Copier le numéro de carte" onPress={copyPan} style={styles.copyButton}><Copy size={15} color={colors.text} /><TextLabel size={10} weight={fonts.bodySemi}>Copier</TextLabel></PressableScale>
+                  <TextLabel size={19} weight={fonts.display} color={colors.onPrimary} style={styles.panText}>{card.pan}</TextLabel>
+                  <PressableScale accessibilityRole="button" accessibilityLabel="Copier le numéro de carte" onPress={copyPan} style={styles.copyButton}><Copy size={15} color={colors.onPrimary} /><TextLabel size={10} weight={fonts.bodySemi} color={colors.onPrimary}>Copier</TextLabel></PressableScale>
                 </View>
-              ) : <TextLabel size={19} weight={fonts.display} style={styles.panText}>••••  ••••  ••••  4821</TextLabel>}
+              ) : <TextLabel size={19} weight={fonts.display} color={colors.onPrimary} style={styles.panText}>••••  ••••  ••••  4821</TextLabel>}
               <View style={styles.cardBottom}>
-                <View><TextLabel size={8} color={colors.textMuted}>TITULAIRE</TextLabel><TextLabel size={11} weight={fonts.bodySemi}>{card.holder}</TextLabel></View>
-                <View><TextLabel size={8} color={colors.textMuted}>EXP</TextLabel><TextLabel size={11} weight={fonts.bodySemi}>{revealed ? card.expiry : '••/••'}</TextLabel></View>
-                <TextLabel size={22} weight={fonts.displayBold}>VISA</TextLabel>
+                <View><TextLabel size={8} color="rgba(255,255,255,0.72)">TITULAIRE</TextLabel><TextLabel size={11} weight={fonts.bodySemi} color={colors.onPrimary}>{card.holder}</TextLabel></View>
+                <View><TextLabel size={8} color="rgba(255,255,255,0.72)">EXP</TextLabel><TextLabel size={11} weight={fonts.bodySemi} color={colors.onPrimary}>{revealed ? card.expiry : '••/••'}</TextLabel></View>
+                <TextLabel size={22} weight={fonts.displayBold} color={colors.onPrimary}>VISA</TextLabel>
               </View>
             </>
           ) : (
             <View style={styles.cardBack}>
               <View style={styles.magnetic} />
-              <View style={styles.cvvLine}><TextLabel size={10} color={colors.textMuted}>CVV</TextLabel><TextLabel size={13} weight={fonts.bodyBold}>{revealed ? card.cvv : '•••'}</TextLabel></View>
-              <TextLabel size={12} color={colors.textMuted}>Votre carte Ledger X · {card.holder}</TextLabel>
-              <TextLabel size={19} weight={fonts.displayBold} style={styles.visaBack}>VISA</TextLabel>
+              <View style={styles.cvvLine}><TextLabel size={10} color={colors.ink}>CVV</TextLabel><TextLabel size={13} weight={fonts.bodyBold} color={colors.ink}>{revealed ? card.cvv : '•••'}</TextLabel></View>
+              <TextLabel size={12} color="rgba(255,255,255,0.72)">Votre carte Ledger X · {card.holder}</TextLabel>
+              <TextLabel size={19} weight={fonts.displayBold} color={colors.onPrimary} style={styles.visaBack}>VISA</TextLabel>
             </View>
           )}
-          {card.frozen ? <View style={styles.frozenOverlay}><LockKeyhole size={18} color={colors.text} /><TextLabel size={14} weight={fonts.bodyBold}>Gelée</TextLabel></View> : null}
+          {card.frozen ? <View style={styles.frozenOverlay}><LockKeyhole size={18} color={colors.onPrimary} /><TextLabel size={14} weight={fonts.bodyBold} color={colors.onPrimary}>Gelée</TextLabel></View> : null}
         </LinearGradient>
       </Animated.View>
       <View style={styles.cardActions}>
@@ -109,7 +112,7 @@ export default function CardScreen() {
       <Surface style={styles.limitCard}>
         <View style={styles.rowBetween}><View><TextLabel size={15} weight={fonts.bodySemi}>Plafond mensuel</TextLabel><TextLabel size={12} color={colors.textDim}>Dépensé 132 500 XOF</TextLabel></View><TextLabel size={14} color={colors.accent} weight={fonts.bodySemi}>{(card.limitMonthly / 1000).toFixed(0)}k</TextLabel></View>
         <View style={styles.progress}><View style={[styles.progressFill, { width: `${Math.min(100, (132_500 / card.limitMonthly) * 100)}%` }]} /></View>
-        <View style={styles.limitChips}>{limits.map((limit) => <PressableScale key={limit} onPress={() => updateCard({ limitMonthly: limit })} style={[styles.limitChip, card.limitMonthly === limit && styles.limitChipActive]}><TextLabel size={11} color={card.limitMonthly === limit ? colors.text : colors.textDim}>{limit >= 1_000_000 ? '1M' : `${limit / 1000}k`}</TextLabel></PressableScale>)}</View>
+        <View style={styles.limitChips}>{limits.map((limit) => <PressableScale key={limit} onPress={() => updateCard({ limitMonthly: limit })} style={[styles.limitChip, card.limitMonthly === limit && styles.limitChipActive]}><TextLabel size={11} color={card.limitMonthly === limit ? colors.onPrimary : colors.textDim}>{limit >= 1_000_000 ? '1M' : `${limit / 1000}k`}</TextLabel></PressableScale>)}</View>
       </Surface>
 
       <Button kind="secondary" onPress={() => setReplaceOpen(true)}>Remplacer la carte</Button>
@@ -134,6 +137,8 @@ export default function CardScreen() {
 }
 
 function CardAction({ icon: Icon, label, onPress, active = false, toggle = false, checked = false }: { icon: LucideIcon; label: string; onPress: () => void; active?: boolean; toggle?: boolean; checked?: boolean }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <PressableScale
       haptic={!toggle}
@@ -143,13 +148,13 @@ function CardAction({ icon: Icon, label, onPress, active = false, toggle = false
       aria-checked={toggle ? checked : undefined}
       onPress={onPress}
       style={styles.detailButton}>
-      <View style={[styles.actionIcon, active && styles.actionIconActive]}><Icon size={20} color={active ? colors.text : colors.textDim} /></View>
+      <View style={[styles.actionIcon, active && styles.actionIconActive]}><Icon size={20} color={active ? colors.onPrimary : colors.textDim} /></View>
       <TextLabel size={11} weight={fonts.bodySemi} numberOfLines={1}>{label}</TextLabel>
     </PressableScale>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   content: { paddingTop: spacing(1), gap: spacing(3) },
   cardShell: { width: '100%', aspectRatio: 1.586, backfaceVisibility: 'hidden' },
   bankCard: { flex: 1, borderRadius: radius.lg, padding: spacing(4), overflow: 'hidden', justifyContent: 'space-between' },
