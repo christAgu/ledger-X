@@ -21,7 +21,7 @@ export default function Home() {
   const displayDenom: Denom = displayCurrency === 'EUR' ? 'aEUR' : displayCurrency === 'USD' ? 'aUSD' : 'aXOF';
   const displayTotal = displayCurrency === 'EUR' ? total / 655.957 : displayCurrency === 'USD' ? total / 600 : total;
   return (
-    <Screen scroll gradient style={styles.content}>
+    <Screen scroll gradient tabBarClearance style={styles.content}>
       <View style={styles.header}>
         <PressableScale onPress={() => router.push('/profile')} style={styles.profileButton}>
           <Image source={require('@/assets/brand/avatar-acxa-preview.png')} style={styles.avatar} />
@@ -40,7 +40,9 @@ export default function Home() {
           <EyeToggle hidden={hideBalances} onPress={() => updateSettings({ hideBalances: !hideBalances })} />
         </View>
         <AmountText value={displayTotal} denom={displayDenom} hidden={hideBalances} size={34} />
-        <TextLabel size={13} color={colors.textMuted}>{hideBalances ? '••••••' : `≈ ${formatXof(total)}`} en XOF</TextLabel>
+        <TextLabel size={13} color={colors.textMuted}>
+          {hideBalances ? '••••••' : displayCurrency === 'XOF' ? `≈ ${formatAmount(total / 655.957, 'aEUR')}` : `≈ ${formatXof(total)}`}
+        </TextLabel>
         <View style={styles.gasBadge}><View style={styles.gasDot} /><TextLabel size={11} color={colors.success} weight={fonts.bodySemi}>Gasless · frais offerts</TextLabel></View>
       </View>
 

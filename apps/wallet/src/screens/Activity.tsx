@@ -29,7 +29,7 @@ export default function ActivityScreen() {
   const copy = async (value: string) => { await Clipboard.setStringAsync(value); setToast(true); setTimeout(() => setToast(false), 1800); };
 
   return (
-    <Screen scroll style={styles.content}>
+    <Screen scroll tabBarClearance style={styles.content}>
       <Header title="Activité" back={false} right={<PressableScale><TextLabel size={20} color={colors.textMuted}>⌕</TextLabel></PressableScale>} />
       <TextLabel size={25} weight={fonts.displayBold}>Votre activité</TextLabel>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>

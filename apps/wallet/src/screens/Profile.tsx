@@ -65,7 +65,7 @@ export default function Profile() {
   };
 
   return (
-    <Screen scroll style={styles.content}>
+    <Screen scroll tabBarClearance style={styles.content}>
       <Header title="Profil" back={false} />
       <View style={styles.profileHero}>
         <View style={styles.avatarRing}><Image source={require('@/assets/brand/avatar-acxa-preview.png')} style={styles.avatar} /></View>

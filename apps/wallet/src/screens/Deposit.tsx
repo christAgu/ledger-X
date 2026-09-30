@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { Check, ChevronRight, Smartphone, Wallet } from 'lucide-react-native';
 import { requestMomoDeposit, confirmMomoDeposit } from '@/services/rails/momo';
+import { createMockHash } from '@/services/ledgerx/mockClient';
 import { useWalletStore } from '@/state/wallet';
 import { formatAmount } from '@/utils/format';
 import { colors, fonts, radius, spacing } from '@/theme/tokens';
@@ -37,7 +38,7 @@ export default function Deposit() {
       amount: value,
       denom: 'aXOF',
       status: 'success',
-      hash: `${Date.now().toString(16).padStart(64, '0')}`,
+      hash: createMockHash(`deposit:${Date.now()}`),
       fee: 0,
     });
     setLoading(false);

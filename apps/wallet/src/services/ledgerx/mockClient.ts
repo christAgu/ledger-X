@@ -9,6 +9,21 @@ function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export function createMockHash(seedValue: string): string {
+  let seed = 2166136261;
+  for (let index = 0; index < seedValue.length; index += 1) {
+    seed = Math.imul(seed ^ seedValue.charCodeAt(index), 16777619);
+  }
+  let hash = '';
+  for (let index = 0; index < 8; index += 1) {
+    seed ^= seed << 13;
+    seed ^= seed >>> 17;
+    seed ^= seed << 5;
+    hash += (seed >>> 0).toString(16).padStart(8, '0');
+  }
+  return hash;
+}
+
 function seededAddress(tag: string): string {
   let seed = 2166136261;
   for (let index = 0; index < tag.length; index += 1) {
@@ -51,9 +66,7 @@ export const mockClient: LedgerXClient = {
     await wait(600 + Math.floor(Math.random() * 600));
     txSequence += 1;
     height += 1;
-    const txHash = Array.from({ length: 64 }, (_, index) =>
-      ((txSequence * 7 + height * 13 + index * 23) % 16).toString(16),
-    ).join('');
+    const txHash = createMockHash(`${txSequence}:${height}:${Date.now()}`);
     return { txHash, height, gasUsed: 68421, feePaidBy: 'treasury-feegrant', status: 'success' };
   },
 };

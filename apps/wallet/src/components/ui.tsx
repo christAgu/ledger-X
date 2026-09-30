@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -15,7 +15,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp, SlideInDown, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { ChevronLeft, Copy, Eye, EyeOff, type LucideIcon } from 'lucide-react-native';
@@ -98,10 +98,12 @@ export function Screen({
   children,
   scroll = false,
   gradient = false,
+  tabBarClearance = false,
   style,
-}: PropsWithChildren<{ scroll?: boolean; gradient?: boolean; style?: StyleProp<ViewStyle> }>) {
+}: PropsWithChildren<{ scroll?: boolean; gradient?: boolean; tabBarClearance?: boolean; style?: StyleProp<ViewStyle> }>) {
+  const insets = useSafeAreaInsets();
   const content = scroll ? (
-    <ScrollView contentContainerStyle={[styles.screenContent, style]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[styles.screenContent, style, tabBarClearance && { paddingBottom: 84 + Math.max(insets.bottom, 10) }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       {children}
     </ScrollView>
   ) : (
@@ -328,11 +330,15 @@ export function Input({
   keyboardType,
   autoCapitalize = 'none',
   prefix,
+  onFocus,
+  onBlur,
   style: inputStyle,
+  containerStyle,
   ...props
-}: React.ComponentProps<typeof TextInput> & { prefix?: string }) {
+}: React.ComponentProps<typeof TextInput> & { prefix?: string; containerStyle?: StyleProp<ViewStyle> }) {
+  const [focused, setFocused] = useState(false);
   return (
-    <View style={styles.inputWrap}>
+    <View style={[styles.inputWrap, focused && styles.inputWrapFocused, containerStyle]}>
       {prefix ? <TextLabel size={15} color={colors.textMuted}>{prefix}</TextLabel> : null}
       <TextInput
         value={value}
@@ -341,7 +347,9 @@ export function Input({
         placeholderTextColor={colors.textDim}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
-        style={[styles.input, inputStyle]}
+        onFocus={(event) => { setFocused(true); onFocus?.(event); }}
+        onBlur={(event) => { setFocused(false); onBlur?.(event); }}
+        style={[styles.input, inputStyle, Platform.OS === 'web' && styles.inputWeb]}
         selectionColor={colors.accent}
         {...props}
       />
@@ -421,6 +429,8 @@ const styles = StyleSheet.create({
   switchKnobActive: { alignSelf: 'flex-end', backgroundColor: colors.text },
   copyButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
   inputWrap: { minHeight: 54, paddingHorizontal: spacing(3), borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
+  inputWrapFocused: { borderColor: colors.primary },
   input: { color: colors.text, fontFamily: fonts.body, fontSize: 16, flex: 1, paddingVertical: spacing(2) },
+  inputWeb: { outlineWidth: 0 },
   pageTitle: { gap: spacing(1) },
 });

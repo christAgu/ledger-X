@@ -3,7 +3,7 @@ import { Image, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Fingerprint, LockKeyhole } from 'lucide-react-native';
-import { authenticate } from '@/services/auth';
+import { authenticate, isBiometricAvailable } from '@/services/auth';
 import { useWalletStore, verifyPin } from '@/state/wallet';
 import { colors, fonts, spacing } from '@/theme/tokens';
 import { PinPad, PressableScale, Screen, TextLabel } from '@/components/ui';
@@ -19,7 +19,6 @@ export default function LockScreen() {
   useEffect(() => {
     let mounted = true;
     const unlockBiometric = async () => {
-      const { isBiometricAvailable } = await import('@/services/auth');
       const available = await isBiometricAvailable();
       if (mounted) setBiometricAvailable(available);
       if (available && useWalletStore.getState().settings.biometricsEnabled) {

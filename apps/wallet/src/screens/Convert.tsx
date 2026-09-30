@@ -66,7 +66,7 @@ export default function Convert() {
   if (success) return <Screen><Header title="Conversion réussie" /><SuccessView title="Conversion réussie" subtitle={`${formatAmount(quote.out, to)} ajoutés à votre solde · Frais offerts`} detail={`Tx ${txShort}`} onDone={() => setSuccess(false)} /></Screen>;
 
   return (
-    <Screen scroll style={styles.content}>
+    <Screen scroll tabBarClearance style={styles.content}>
       <Header title="Échanger" back={false} right={<View style={styles.gasIcon}><ShieldCheck size={17} color={colors.success} /></View>} />
       <PageTitle title="Convertissez vos devises" subtitle="Des taux transparents, sans frais cachés." />
       <View style={styles.tokenStack}>
@@ -113,7 +113,7 @@ function TokenPanel({ title, denom, amount, balance, onAmountChange, onPress, on
     <Card style={styles.tokenPanel}>
       <View style={styles.rowBetween}><TextLabel size={12} color={colors.textMuted}>{title}</TextLabel>{balance !== undefined ? <TextLabel size={11} color={colors.textDim}>Disponible {formatAmount(balance, denom)}</TextLabel> : null}</View>
       <View style={styles.tokenMain}>
-        {readOnly ? <TextLabel size={25} weight={fonts.displayBold}>{amount}</TextLabel> : <Input value={amount} onChangeText={onAmountChange} keyboardType="decimal-pad" placeholder="0" style={styles.amountInput} />}
+        {readOnly ? <TextLabel size={25} weight={fonts.displayBold}>{amount}</TextLabel> : <Input value={amount} onChangeText={onAmountChange} keyboardType="decimal-pad" placeholder="0" style={styles.amountInput} containerStyle={styles.amountInputContainer} />}
         <PressableScale onPress={onPress} style={styles.denomSelect}><AssetIcon denom={denom} size={26} /><TextLabel size={12} weight={fonts.bodySemi}>{denom}</TextLabel><ChevronDown size={14} color={colors.textMuted} /></PressableScale>
       </View>
       {onMax ? <PressableScale onPress={onMax} style={styles.maxButton}><TextLabel size={11} color={colors.accent} weight={fonts.bodySemi}>MAX</TextLabel></PressableScale> : null}
@@ -131,9 +131,10 @@ const styles = StyleSheet.create({
   tokenStack: { gap: spacing(2), position: 'relative' },
   tokenPanel: { gap: spacing(2), padding: spacing(3) },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  tokenMain: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42, gap: 6 },
-  amountInput: { borderWidth: 0, backgroundColor: 'transparent', paddingHorizontal: 0, fontFamily: fonts.displayBold, fontSize: 24 },
-  denomSelect: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.bgElevated, borderRadius: radius.pill, padding: 6, paddingRight: 9 },
+  tokenMain: { flexDirection: 'row', alignItems: 'center', minHeight: 42, gap: 6 },
+  amountInputContainer: { flex: 1, minWidth: 0 },
+  amountInput: { flex: 1, minWidth: 0, borderWidth: 0, backgroundColor: 'transparent', paddingHorizontal: 0, fontFamily: fonts.displayBold, fontSize: 24 },
+  denomSelect: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.bgElevated, borderRadius: radius.pill, padding: 6, paddingRight: 9 },
   maxButton: { alignSelf: 'flex-start', paddingVertical: 3 },
   swapButton: { alignSelf: 'center', marginVertical: -25, zIndex: 2, width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 22, backgroundColor: colors.primary, borderWidth: 4, borderColor: colors.bg },
   quoteCard: { gap: spacing(3) },

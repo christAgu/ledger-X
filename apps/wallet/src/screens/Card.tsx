@@ -34,6 +34,10 @@ export default function CardScreen() {
     if (await authenticate('Afficher les détails de votre carte')) { setRevealed(true); return; }
     setPinOpen(true);
   };
+  const toggleDetails = async () => {
+    if (revealed) { setRevealed(false); return; }
+    await showDetails();
+  };
   const checkCode = async (code: string) => {
     if (await verifyPin(code)) { setPinOpen(false); setPin(''); setRevealed(true); setError(false); }
     else { setPin(''); setError(true); }
@@ -49,7 +53,7 @@ export default function CardScreen() {
   };
 
   return (
-    <Screen scroll style={styles.content}>
+    <Screen scroll tabBarClearance style={styles.content}>
       <Header title="Ma carte" back={false} right={<PressableScale><TextLabel size={20} color={colors.textMuted}>···</TextLabel></PressableScale>} />
       <Animated.View style={[styles.cardShell, animatedCard]}>
         <LinearGradient colors={card.frozen ? ['#28374D', '#19283D'] : ['#16458A', '#0C2B5A', '#071632']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.bankCard, flipped && styles.reverseFace]}>
@@ -77,9 +81,9 @@ export default function CardScreen() {
         </LinearGradient>
       </Animated.View>
       <View style={styles.cardActions}>
-        <PressableScale onPress={showDetails} style={styles.detailButton}><ShieldCheck size={18} color={colors.accent} /><TextLabel size={13} weight={fonts.bodySemi}>{revealed ? 'Détails affichés' : 'Afficher les détails'}</TextLabel></PressableScale>
-        {revealed ? <PressableScale onPress={copyPan} style={styles.detailButton}><Copy size={16} color={colors.accent} /><TextLabel size={13} weight={fonts.bodySemi}>Copier le numéro</TextLabel></PressableScale> : null}
-        <PressableScale onPress={flip} style={styles.detailButton}><CreditCard size={17} color={colors.accent} /><TextLabel size={13} weight={fonts.bodySemi}>{flipped ? 'Voir le recto' : 'Voir le verso'}</TextLabel></PressableScale>
+        <PressableScale onPress={toggleDetails} style={styles.detailButton}><ShieldCheck size={18} color={colors.accent} /><TextLabel size={11} weight={fonts.bodySemi} numberOfLines={1}>{revealed ? 'Masquer' : 'Détails'}</TextLabel></PressableScale>
+        {revealed ? <PressableScale onPress={copyPan} style={styles.detailButton}><Copy size={16} color={colors.accent} /><TextLabel size={11} weight={fonts.bodySemi} numberOfLines={1}>Copier</TextLabel></PressableScale> : null}
+        <PressableScale onPress={flip} style={styles.detailButton}><CreditCard size={17} color={colors.accent} /><TextLabel size={11} weight={fonts.bodySemi} numberOfLines={1}>{flipped ? 'Recto' : 'Verso'}</TextLabel></PressableScale>
       </View>
 
       <Surface style={styles.controlCard}>
@@ -131,8 +135,8 @@ const styles = StyleSheet.create({
   magnetic: { height: 42, backgroundColor: '#020917', marginHorizontal: -spacing(4), marginTop: spacing(3) },
   cvvLine: { backgroundColor: colors.paper, height: 32, borderRadius: 4, paddingHorizontal: spacing(2), flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   visaBack: { alignSelf: 'flex-end' },
-  cardActions: { flexDirection: 'row', justifyContent: 'space-around' },
-  detailButton: { flexDirection: 'row', alignItems: 'center', gap: 7, padding: 5 },
+  cardActions: { flexDirection: 'row', gap: spacing(1) },
+  detailButton: { flex: 1, minWidth: 0, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 5 },
   controlCard: { paddingHorizontal: spacing(3), paddingVertical: spacing(1) },
   limitCard: { gap: spacing(3) },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
