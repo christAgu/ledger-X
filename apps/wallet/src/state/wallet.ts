@@ -88,7 +88,7 @@ const startingState = {
     expiry: '08/29',
     holder: 'AMINA TRAORÉ',
   },
-  settings: { biometricsEnabled: false, hideBalances: false, displayCurrency: 'XOF' as const },
+  settings: { biometricsEnabled: false, hideBalances: false, displayCurrency: 'EUR' as const },
   onboarded: false,
 };
 
@@ -114,6 +114,12 @@ export const useWalletStore = create<WalletState>()(
     {
       name: 'ledgerx-wallet-state',
       storage: createJSONStorage(() => AsyncStorage),
+      version: 1,
+      migrate: (persisted, version) => {
+        const state = persisted as WalletState;
+        if (version < 1) return { ...state, settings: { ...state.settings, displayCurrency: 'EUR' } };
+        return state;
+      },
       partialize: ({ hydrated: _hydrated, ...state }) => state,
       onRehydrateStorage: () => (state) => state?.setHydrated(true),
     },
