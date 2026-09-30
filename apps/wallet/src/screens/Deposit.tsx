@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { Check, ChevronRight, Smartphone, Wallet } from 'lucide-react-native';
 import { requestMomoDeposit, confirmMomoDeposit } from '@/services/rails/momo';
 import { createMockHash } from '@/services/ledgerx/mockClient';
 import { useWalletStore } from '@/state/wallet';
 import { formatAmount } from '@/utils/format';
+import { wait } from '@/utils/wait';
 import { colors, fonts, radius, spacing } from '@/theme/tokens';
 import { Button, Card, Header, Input, PageTitle, PressableScale, Screen, SuccessView, TextLabel } from '@/components/ui';
+import { OrbitLoader, ProcessingOverlay } from '@/components/OrbitLoader';
 
 type DepositStep = 'method' | 'amount' | 'review' | 'pending' | 'success';
 
@@ -22,14 +24,14 @@ export default function Deposit() {
   const value = Number(amount.replace(/\s/g, '').replace(',', '.')) || 0;
   const createRequest = async () => {
     setLoading(true);
-    const request = await requestMomoDeposit(value, phone);
+    const [request] = await Promise.all([requestMomoDeposit(value, phone), wait(1600)]);
     setRequestId(request.id);
     setLoading(false);
     setStep('pending');
   };
   const finish = async () => {
     setLoading(true);
-    await confirmMomoDeposit(requestId);
+    await Promise.all([confirmMomoDeposit(requestId), wait(1600)]);
     updateBalance('aXOF', value);
     addTransaction({
       type: 'deposit',
@@ -53,7 +55,7 @@ export default function Deposit() {
       <Screen style={styles.pendingScreen}>
         <Header title="Paiement en attente" />
         <View style={styles.pendingContent}>
-          <View style={styles.spinnerRing}><ActivityIndicator size="large" color={colors.accent} /></View>
+          <OrbitLoader size={200} />
           <TextLabel size={23} weight={fonts.displayBold} style={styles.center}>Validez le paiement sur votre téléphone</TextLabel>
           <TextLabel size={14} color={colors.textMuted} style={styles.center}>Une demande MTN MoMo a été envoyée au {phone}.</TextLabel>
           <Card style={styles.instruction}><Smartphone size={19} color={colors.warning} /><TextLabel size={13} color={colors.textMuted} style={{ flex: 1 }}>Validez sur votre téléphone avec le code USSD *880#.</TextLabel></Card>
@@ -61,6 +63,7 @@ export default function Deposit() {
         </View>
         <Button disabled={loading} onPress={finish}>{loading ? 'Vérification…' : 'J’ai validé le paiement'}</Button>
         <PressableScale onPress={() => setStep('review')} style={styles.cancel}><TextLabel size={13} color={colors.textDim}>Annuler le paiement</TextLabel></PressableScale>
+        <ProcessingOverlay visible={loading} title="Vérification du paiement…" subtitle="Émission de aXOF · MsgMint" />
       </Screen>
     );
   }
@@ -105,6 +108,7 @@ export default function Deposit() {
           <View style={{ marginTop: 'auto' }}><Button disabled={loading} onPress={createRequest}>{loading ? 'Envoi de la demande…' : 'Confirmer et payer'}</Button></View>
         </>
       )}
+      <ProcessingOverlay visible={loading} title="Envoi de la demande MoMo…" subtitle="Connexion à MTN MoMo" />
     </Screen>
   );
 }
@@ -132,7 +136,6 @@ const styles = StyleSheet.create({
   disclaimer: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: spacing(3) },
   pendingScreen: { paddingBottom: spacing(3) },
   pendingContent: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing(3), paddingHorizontal: spacing(2) },
-  spinnerRing: { width: 90, height: 90, borderRadius: 45, alignItems: 'center', justifyContent: 'center', borderColor: colors.border, borderWidth: 1, backgroundColor: colors.surface },
   center: { textAlign: 'center' },
   instruction: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
   cancel: { alignItems: 'center', padding: spacing(3) },
