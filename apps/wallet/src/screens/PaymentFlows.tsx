@@ -42,6 +42,7 @@ export function SendScreen() {
   const [txShort, setTxShort] = useState('');
   const balances = useWalletStore((state) => state.balances);
   const updateBalance = useWalletStore((state) => state.updateBalance);
+  const syncBalances = useWalletStore((state) => state.syncBalances);
   const addTransaction = useWalletStore((state) => state.addTransaction);
   const value = Number(amount.replace(/\s/g, '').replace(',', '.')) || 0;
   const fee = mode === '@tag Ledger X' ? 0 : mode === 'Mobile Money' ? value * 0.01 : 500;
@@ -76,24 +77,46 @@ export function SendScreen() {
     else setPinOpen(true);
   };
   const send = async () => {
-    const destination = resolved?.address ?? 'ledgerx1q9p8v6d4c2x7m3n5k8h0t6w4s2j9p7f3d5g1c';
+    const destination = mode === '@tag Ledger X'
+      ? resolved?.address ?? ''
+      : mode === 'Mobile Money'
+        ? phone
+        : country === 'France' ? iban.replace(/\s/g, '') : `${routing}:${accountNumber}`;
     setPinOpen(false);
     setLoading(true);
-    const [result] = await Promise.all([ledgerx.signAndBroadcast({ type: 'MsgSend', toAddress: destination, denom, amount: value, memo: mode }), wait(1600)]);
-    setTxShort(`${result.txHash.slice(0, 8)}…${result.txHash.slice(-6)}`);
-    updateBalance(denom, -value);
-    addTransaction({
-      type: 'send',
-      title: mode === '@tag Ledger X' ? `Envoyé à @${tag}` : mode === 'Mobile Money' ? `Envoi ${operator}` : 'Virement bancaire',
-      detail: mode === '@tag Ledger X' ? `${resolved?.displayName ?? tag} · Ledger X` : mode === 'Mobile Money' ? `${operator} · ${phone}` : `${country} · ${bankName}`,
-      amount: -value,
-      denom,
-      status: 'success',
-      hash: result.txHash,
-      fee,
-    });
-    setLoading(false);
-    setStep('success');
+    setError('');
+    try {
+      const [result] = await Promise.all([
+        ledgerx.signAndBroadcast({ type: 'MsgSend', toAddress: destination, denom, amount: value, memo: mode }),
+        wait(1600),
+      ]);
+      if (result.status !== 'success') {
+        setError('Le transfert a échoué. Vérifiez votre solde et réessayez.');
+        return;
+      }
+      setTxShort(`${result.txHash.slice(0, 8)}…${result.txHash.slice(-6)}`);
+      const accountAddress = useWalletStore.getState().account?.address;
+      const syncedBalances = accountAddress
+        ? await ledgerx.getBalances(accountAddress).catch(() => ({}))
+        : {};
+      syncBalances(syncedBalances);
+      if (Object.keys(syncedBalances).length === 0) updateBalance(denom, -value);
+      addTransaction({
+        type: 'send',
+        title: mode === '@tag Ledger X' ? `Envoyé à @${tag}` : mode === 'Mobile Money' ? `Envoi ${operator}` : 'Virement bancaire',
+        detail: mode === '@tag Ledger X' ? `${resolved?.displayName ?? tag} · Ledger X` : mode === 'Mobile Money' ? `${operator} · ${phone}` : `${country} · ${bankName}`,
+        amount: -value,
+        denom,
+        status: 'success',
+        hash: result.txHash,
+        fee,
+      });
+      setStep('success');
+    } catch {
+      setError('Le transfert a échoué. Vérifiez votre connexion et réessayez.');
+    } finally {
+      setLoading(false);
+    }
   };
   const submitPin = async (code: string) => {
     if (await verifyPin(code)) { setPinError(false); await send(); }
@@ -164,6 +187,7 @@ export function SendScreen() {
             <ReviewLine label="Total débité" value={formatAmount(value, denom)} bold />
           </Card>
           <Card style={styles.feeHint}><ShieldCheck size={16} color={colors.success} /><TextLabel size={12} color={colors.success}>Transaction signée par votre smart account x/auth.</TextLabel></Card>
+          {error ? <TextLabel size={12} color={colors.danger}>{error}</TextLabel> : null}
           <View style={{ marginTop: 'auto' }}><Button disabled={loading} onPress={submit}>{loading ? 'Confirmation…' : 'Confirmer l’envoi'}</Button></View>
         </>
       )}
@@ -192,6 +216,7 @@ export function CashoutScreen() {
   const [txShort, setTxShort] = useState('');
   const balances = useWalletStore((state) => state.balances);
   const updateBalance = useWalletStore((state) => state.updateBalance);
+  const syncBalances = useWalletStore((state) => state.syncBalances);
   const addTransaction = useWalletStore((state) => state.addTransaction);
   const value = Number(amount.replace(/\s/g, '').replace(',', '.')) || 0;
   const fee = value * 0.01;
@@ -204,12 +229,30 @@ export function CashoutScreen() {
   const cashout = async () => {
     setPinOpen(false);
     setLoading(true);
-    const [result] = await Promise.all([ledgerx.signAndBroadcast({ type: 'MsgCashout', denom: 'aXOF', amount: value, rail, destination }), wait(1600)]);
-    setTxShort(`${result.txHash.slice(0, 8)}…${result.txHash.slice(-6)}`);
-    updateBalance('aXOF', -value);
-    addTransaction({ type: 'cashout', title: `Retrait ${railName}`, detail: destination, amount: -value, denom: 'aXOF', status: 'success', hash: result.txHash, fee });
-    setLoading(false);
-    setStep('success');
+    setError('');
+    try {
+      const [result] = await Promise.all([
+        ledgerx.signAndBroadcast({ type: 'MsgCashout', denom: 'aXOF', amount: value, rail, destination }),
+        wait(1600),
+      ]);
+      if (result.status !== 'success') {
+        setError('Le retrait a échoué. Vérifiez votre solde et réessayez.');
+        return;
+      }
+      setTxShort(`${result.txHash.slice(0, 8)}…${result.txHash.slice(-6)}`);
+      const accountAddress = useWalletStore.getState().account?.address;
+      const syncedBalances = accountAddress
+        ? await ledgerx.getBalances(accountAddress).catch(() => ({}))
+        : {};
+      syncBalances(syncedBalances);
+      if (Object.keys(syncedBalances).length === 0) updateBalance('aXOF', -value);
+      addTransaction({ type: 'cashout', title: `Retrait ${railName}`, detail: destination, amount: -value, denom: 'aXOF', status: 'success', hash: result.txHash, fee });
+      setStep('success');
+    } catch {
+      setError('Le retrait a échoué. Vérifiez votre connexion et réessayez.');
+    } finally {
+      setLoading(false);
+    }
   };
   const submitPin = async (code: string) => {
     if (await verifyPin(code)) { setPinError(false); await cashout(); }
@@ -247,6 +290,7 @@ export function CashoutScreen() {
           <PageTitle title="Confirmez votre retrait" subtitle="La demande sera envoyée à votre opérateur." />
           <Card style={styles.reviewCard}><ReviewLine label="Destination" value={`${railName} · ${destination}`} /><ReviewLine label="Montant" value={formatAmount(value, 'aXOF')} /><ReviewLine label="Frais (1 %)" value={formatAmount(fee, 'aXOF')} /><View style={styles.divider} /><ReviewLine label="Vous recevez" value={formatAmount(value - fee, 'aXOF')} green bold /></Card>
           <Card style={styles.feeHint}><ShieldCheck size={16} color={colors.success} /><TextLabel size={12} color={colors.success}>Frais réseau offerts par le Trésor.</TextLabel></Card>
+          {error ? <TextLabel size={12} color={colors.danger}>{error}</TextLabel> : null}
           <Button disabled={loading} onPress={submit}>{loading ? 'Confirmation…' : 'Confirmer le retrait'}</Button>
         </>
       )}

@@ -47,6 +47,7 @@ type WalletState = {
   setAccount: (account: SmartAccount) => void;
   setOnboarded: (onboarded: boolean) => void;
   updateBalance: (denom: Denom, delta: number) => void;
+  syncBalances: (partial: Partial<Record<Denom, number>>) => void;
   addTransaction: (transaction: Omit<WalletTransaction, 'id' | 'date'>) => void;
   updateCard: (patch: Partial<CardState>) => void;
   updateSettings: (patch: Partial<WalletState['settings']>) => void;
@@ -103,6 +104,8 @@ export const useWalletStore = create<WalletState>()(
       setOnboarded: (onboarded) => set({ onboarded }),
       updateBalance: (denom, delta) =>
         set((state) => ({ balances: { ...state.balances, [denom]: state.balances[denom] + delta } })),
+      syncBalances: (partial) =>
+        set((state) => ({ balances: { ...state.balances, ...partial } })),
       addTransaction: (transaction) =>
         set((state) => ({
           transactions: [{ ...transaction, id: `tx-${Date.now()}`, date: Date.now() }, ...state.transactions],

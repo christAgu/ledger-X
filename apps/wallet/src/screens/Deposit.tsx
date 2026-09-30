@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { Check, ChevronRight, Smartphone, Wallet } from 'lucide-react-native';
 import { requestMomoDeposit, confirmMomoDeposit } from '@/services/rails/momo';
-import { createMockHash } from '@/services/ledgerx/mockClient';
+import { ledgerx } from '@/services/ledgerx';
 import { useWalletStore } from '@/state/wallet';
 import { formatAmount } from '@/utils/format';
 import { wait } from '@/utils/wait';
@@ -22,8 +22,10 @@ export default function Deposit() {
   const [amount, setAmount] = useState('10 000');
   const [phone, setPhone] = useState(useWalletStore.getState().phone);
   const [requestId, setRequestId] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const updateBalance = useWalletStore((state) => state.updateBalance);
+  const syncBalances = useWalletStore((state) => state.syncBalances);
   const addTransaction = useWalletStore((state) => state.addTransaction);
   const value = Number(amount.replace(/\s/g, '').replace(',', '.')) || 0;
   const createRequest = async () => {
@@ -35,20 +37,42 @@ export default function Deposit() {
   };
   const finish = async () => {
     setLoading(true);
-    await Promise.all([confirmMomoDeposit(requestId), wait(1600)]);
-    updateBalance('aXOF', value);
-    addTransaction({
-      type: 'deposit',
-      title: 'Dépôt MTN MoMo',
-      detail: `MTN MoMo · ${phone}`,
-      amount: value,
-      denom: 'aXOF',
-      status: 'success',
-      hash: createMockHash(`deposit:${Date.now()}`),
-      fee: 0,
-    });
-    setLoading(false);
-    setStep('success');
+    setError('');
+    try {
+      const account = useWalletStore.getState().account;
+      if (!account) throw new Error('Wallet account is missing');
+      const [result] = await Promise.all([
+        confirmMomoDeposit(requestId).then(() => ledgerx.deposit({
+          address: account.address,
+          denom: 'aXOF',
+          amount: value,
+          rail: 'mtn-momo',
+        })),
+        wait(1600),
+      ]);
+      if (result.status !== 'success') {
+        setError('Le dépôt n’a pas pu être confirmé. Réessayez.');
+        return;
+      }
+      const balances = await ledgerx.getBalances(account.address).catch(() => ({}));
+      syncBalances(balances);
+      if (Object.keys(balances).length === 0) updateBalance('aXOF', value);
+      addTransaction({
+        type: 'deposit',
+        title: 'Dépôt MTN MoMo',
+        detail: `MTN MoMo · ${phone}`,
+        amount: value,
+        denom: 'aXOF',
+        status: 'success',
+        hash: result.txHash,
+        fee: 0,
+      });
+      setStep('success');
+    } catch {
+      setError('Le dépôt n’a pas pu être confirmé. Réessayez.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (step === 'success') {
@@ -62,6 +86,7 @@ export default function Deposit() {
           <OrbitLoader size={200} />
           <TextLabel size={23} weight={fonts.displayBold} style={styles.center}>Validez le paiement sur votre téléphone</TextLabel>
           <TextLabel size={14} color={colors.textMuted} style={styles.center}>Une demande MTN MoMo a été envoyée au {phone}.</TextLabel>
+          {error ? <TextLabel size={12} color={colors.danger}>{error}</TextLabel> : null}
           <Card style={styles.instruction}><Smartphone size={19} color={colors.warning} /><TextLabel size={13} color={colors.textMuted} style={{ flex: 1 }}>Validez sur votre téléphone avec le code USSD *880#.</TextLabel></Card>
           <TextLabel size={12} color={colors.textDim}>Montant demandé · {formatAmount(value, 'aXOF')}</TextLabel>
         </View>

@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Image, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { ArrowDownToLine, ArrowLeftRight, Bell, ChevronRight, QrCode, Send, Wallet } from 'lucide-react-native';
 import { fonts, radius, spacing, type Palette, withAlpha } from '@/theme/tokens';
 import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { useWalletStore } from '@/state/wallet';
+import { ledgerx } from '@/services/ledgerx';
 import { valueInXof } from '@/services/rates';
 import type { Denom } from '@/services/ledgerx/types';
 import { formatAmount, formatXof } from '@/utils/format';
@@ -23,6 +24,8 @@ export default function Home() {
   const balances = useWalletStore((state) => state.balances);
   const transactions = useWalletStore((state) => state.transactions);
   const virtualCard = useWalletStore((state) => state.card);
+  const accountAddress = useWalletStore((state) => state.account?.address);
+  const syncBalances = useWalletStore((state) => state.syncBalances);
   const { hideBalances, displayCurrency } = useWalletStore((state) => state.settings);
   const updateSettings = useWalletStore((state) => state.updateSettings);
   const tag = useWalletStore((state) => state.tag);
@@ -30,6 +33,14 @@ export default function Home() {
   const cardWidth = Math.min(260, screenWidth * 0.64);
   const displayDenom: Denom = displayCurrency === 'EUR' ? 'aEUR' : displayCurrency === 'USD' ? 'aUSD' : 'aXOF';
   const displayTotal = displayCurrency === 'EUR' ? total / 655.957 : displayCurrency === 'USD' ? total / 600 : total;
+  useFocusEffect(useCallback(() => {
+    if (!accountAddress) return;
+    let active = true;
+    void ledgerx.getBalances(accountAddress)
+      .then((partial) => { if (active) syncBalances(partial); })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [accountAddress, syncBalances]));
   return (
     <Screen scroll gradient tabBarClearance style={styles.content}>
       <AnimatedGradientBackdrop height={380} />
