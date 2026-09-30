@@ -1,4 +1,5 @@
 import type { LedgerXClient, LedgerXMsg, SmartAccount, TxResult } from './types';
+import { xofToEur } from '@/services/rates';
 
 const charset = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
 const takenTags = new Set(['john', 'admin', 'ledgerx']);
@@ -65,12 +66,12 @@ export const mockClient: LedgerXClient = {
   async getBalances() {
     return {};
   },
-  async deposit({ address, denom, amount, rail }): Promise<TxResult> {
+  async deposit({ address, amount, rail }): Promise<TxResult & { credited: number }> {
     await wait(600 + Math.floor(Math.random() * 600));
     txSequence += 1;
     height += 1;
-    const txHash = createMockHash(`${txSequence}:${height}:${Date.now()}:${address}:${denom}:${amount}:${rail}`);
-    return { txHash, height, gasUsed: 68421, feePaidBy: 'treasury-feegrant', status: 'success' };
+    const txHash = createMockHash(`${txSequence}:${height}:${Date.now()}:${address}:${amount}:${rail}`);
+    return { txHash, height, gasUsed: 68421, feePaidBy: 'treasury-feegrant', status: 'success', credited: xofToEur(amount) };
   },
   async signAndBroadcast(_msg: LedgerXMsg): Promise<TxResult> {
     await wait(600 + Math.floor(Math.random() * 600));

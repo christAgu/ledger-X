@@ -5,10 +5,10 @@ import { getRandomBytes } from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { mockClient } from './mockClient';
-import type { Denom, LedgerXClient, SmartAccount, TxResult } from './types';
+import type { LedgerXClient, SmartAccount, TxResult } from './types';
 
 const DEVICE_KEY_NAME = 'ledgerx-device-key';
-const SYNTHETIC_DENOMS = ['aXOF', 'aEUR', 'aUSD'] as const;
+const EURC_CHAIN_DENOM = 'ueurc';
 const MICRO_UNITS = 1_000_000;
 const GAS_FEE = {
   amount: [{ denom: 'uledx', amount: '1500' }],
@@ -18,7 +18,8 @@ const GAS_FEE = {
 type RelayerConfig = {
   chainId: string;
   treasuryAddress: string;
-  allowedDenoms: string[];
+  denom: typeof EURC_CHAIN_DENOM;
+  xofPerEur: '655.957';
 };
 
 type RelayerTag = {
@@ -72,48 +73,51 @@ const chainClient: LedgerXClient = {
     const response = await requestJson<BalanceResponse>(
       `/rest/cosmos/bank/v1beta1/balances/${encodeURIComponent(address)}`,
     );
-    const balances: Partial<Record<Denom, number>> = { aXOF: 0, aEUR: 0, aUSD: 0 };
+    let eurcBaseUnits = 0n;
     for (const coin of response.balances ?? []) {
-      if (isSyntheticDenom(coin.denom)) {
-        balances[coin.denom] = Number(BigInt(coin.amount)) / MICRO_UNITS;
-      }
+      if (coin.denom === EURC_CHAIN_DENOM) eurcBaseUnits = BigInt(coin.amount);
     }
-    return balances;
+    return { EURC: Number(eurcBaseUnits) / MICRO_UNITS };
   },
 
-  async deposit({ address, denom, amount, rail }) {
+  async deposit({ address, amount, rail }) {
     const result = await requestJson<{
       status: string;
       txHash?: string;
       height?: number;
+      credited?: { denom: string; amount: string };
     }>('/v1/sandbox/deposit', {
       address,
-      denom,
-      amount: formatMajorAmount(amount),
-      rail: rail.replace(/-/g, '_'),
+      currency: 'XOF',
+      amount: formatXofAmount(amount),
+      rail,
     });
+    const credited =
+      result.credited?.denom === EURC_CHAIN_DENOM && /^\d+$/.test(result.credited.amount)
+        ? Number(BigInt(result.credited.amount)) / MICRO_UNITS
+        : 0;
     return {
       txHash: result.txHash ?? '',
       height: result.height ?? 0,
       gasUsed: 0,
       feePaidBy: 'treasury-feegrant',
-      status: result.status === 'minted' && Boolean(result.txHash) ? 'success' : 'failed',
+      status: result.status === 'minted' && Boolean(result.txHash) && credited > 0 ? 'success' : 'failed',
+      credited,
     };
   },
 
   async signAndBroadcast(message) {
     if (
       message.type === 'MsgSend'
-      && isSyntheticDenom(message.denom)
+      && message.denom === 'EURC'
       && message.toAddress.startsWith('ledgerx1')
     ) {
-      return broadcastSend(message.toAddress, message.denom, message.amount, message.memo);
+      return broadcastSend(message.toAddress, message.amount, message.memo);
     }
-    if (message.type === 'MsgCashout' && isSyntheticDenom(message.denom)) {
+    if (message.type === 'MsgCashout' && message.denom === 'EURC') {
       const config = await getRelayerConfig();
       const result = await broadcastSend(
         config.treasuryAddress,
-        message.denom,
         message.amount,
         `Ledger X cashout · ${message.rail}`,
       );
@@ -158,7 +162,12 @@ async function loadDeviceWallet(): Promise<DirectSecp256k1Wallet> {
 async function getRelayerConfig(): Promise<RelayerConfig> {
   configPromise ??= requestJson<RelayerConfig>('/v1/config')
     .then((config) => {
-      if (!config.chainId || !config.treasuryAddress || !Array.isArray(config.allowedDenoms)) {
+      if (
+        !config.chainId
+        || !config.treasuryAddress
+        || config.denom !== EURC_CHAIN_DENOM
+        || config.xofPerEur !== '655.957'
+      ) {
         throw new Error('The relayer returned an invalid chain configuration');
       }
       return config;
@@ -194,7 +203,6 @@ async function getSigningClient(): Promise<SigningStargateClient> {
 
 async function broadcastSend(
   toAddress: string,
-  denom: 'aXOF' | 'aEUR' | 'aUSD',
   amount: number,
   memo?: string,
 ): Promise<TxResult> {
@@ -206,7 +214,7 @@ async function broadcastSend(
   const result = await client.sendTokens(
     account.address,
     toAddress,
-    [{ denom, amount: toBaseUnits(amount) }],
+    [{ denom: EURC_CHAIN_DENOM, amount: toBaseUnits(amount) }],
     { ...GAS_FEE, granter: config.treasuryAddress },
     memo,
   );
@@ -251,10 +259,6 @@ function getRelayerUrl(): string {
   return url;
 }
 
-function isSyntheticDenom(denom: string): denom is (typeof SYNTHETIC_DENOMS)[number] {
-  return SYNTHETIC_DENOMS.includes(denom as (typeof SYNTHETIC_DENOMS)[number]);
-}
-
 function toBaseUnits(amount: number): string {
   const baseAmount = Math.round(amount * MICRO_UNITS);
   if (!Number.isFinite(amount) || amount <= 0 || !Number.isSafeInteger(baseAmount) || baseAmount <= 0) {
@@ -263,11 +267,11 @@ function toBaseUnits(amount: number): string {
   return String(baseAmount);
 }
 
-function formatMajorAmount(amount: number): string {
-  const baseAmount = BigInt(toBaseUnits(amount));
-  const whole = baseAmount / BigInt(MICRO_UNITS);
-  const fraction = (baseAmount % BigInt(MICRO_UNITS)).toString().padStart(6, '0').replace(/0+$/, '');
-  return fraction ? `${whole}.${fraction}` : whole.toString();
+function formatXofAmount(amount: number): string {
+  if (!Number.isSafeInteger(amount) || amount <= 0) {
+    throw new Error('XOF amount must be a positive integer');
+  }
+  return String(amount);
 }
 
 function bytesToHex(bytes: Uint8Array): string {

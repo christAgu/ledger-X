@@ -1,4 +1,4 @@
-export type Denom = 'aXOF' | 'aEUR' | 'aUSD' | 'USDC' | 'USDT' | 'BTC' | 'SOL';
+export type Denom = 'EURC' | 'USD' | 'USDC' | 'USDT' | 'BTC' | 'SOL';
 export type CashoutRail = 'mtn-momo' | 'moov-money' | 'bank';
 
 export interface SmartAccount {
@@ -27,6 +27,6 @@ export interface LedgerXClient {
   resolveTag(tag: string): Promise<{ tag: string; address: string; displayName: string } | null>;
   isTagAvailable(tag: string): Promise<boolean>;
   getBalances(address: string): Promise<Partial<Record<Denom, number>>>;
-  deposit(p: { address: string; denom: Denom; amount: number; rail: 'mtn-momo' }): Promise<TxResult>;
+  deposit(p: { address: string; currency: 'XOF'; amount: number; rail: 'mtn-momo' }): Promise<TxResult & { credited: number }>;
   signAndBroadcast(msg: LedgerXMsg): Promise<TxResult>;
 }

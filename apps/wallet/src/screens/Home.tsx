@@ -6,7 +6,7 @@ import { fonts, radius, spacing, type Palette, withAlpha } from '@/theme/tokens'
 import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { useWalletStore } from '@/state/wallet';
 import { ledgerx } from '@/services/ledgerx';
-import { valueInXof } from '@/services/rates';
+import { valueInXof, XOF_PER_EUR } from '@/services/rates';
 import type { Denom } from '@/services/ledgerx/types';
 import { formatAmount, formatXof } from '@/utils/format';
 import { AnimatedGradientBackdrop } from '@/components/AnimatedGradient';
@@ -14,7 +14,7 @@ import { TransactionRow } from '@/components/TransactionRow';
 import { WalletCard } from '@/components/WalletCard';
 import { AmountText, AssetRow, Button, Card, EyeToggle, PressableScale, QuickAction, Screen, Sheet, TextLabel } from '@/components/ui';
 
-const denoms: Denom[] = ['aXOF', 'aEUR', 'aUSD', 'USDC', 'USDT', 'BTC', 'SOL'];
+const denoms: Denom[] = ['EURC', 'USD', 'USDC', 'USDT', 'BTC', 'SOL'];
 
 export default function Home() {
   const { colors } = useTheme();
@@ -31,8 +31,8 @@ export default function Home() {
   const tag = useWalletStore((state) => state.tag);
   const total = useMemo(() => denoms.reduce((sum, denom) => sum + valueInXof(balances[denom], denom), 0), [balances]);
   const cardWidth = Math.min(260, screenWidth * 0.64);
-  const displayDenom: Denom = displayCurrency === 'EUR' ? 'aEUR' : displayCurrency === 'USD' ? 'aUSD' : 'aXOF';
-  const displayTotal = displayCurrency === 'EUR' ? total / 655.957 : displayCurrency === 'USD' ? total / 600 : total;
+  const displayDenom: Denom = displayCurrency === 'USD' ? 'USD' : 'EURC';
+  const displayTotal = displayCurrency === 'EUR' ? total / XOF_PER_EUR : displayCurrency === 'USD' ? total / 600 : total;
   useFocusEffect(useCallback(() => {
     if (!accountAddress) return;
     let active = true;
@@ -61,9 +61,11 @@ export default function Home() {
           <TextLabel size={13} color={colors.textMuted}>Solde total estimé</TextLabel>
           <EyeToggle hidden={hideBalances} onPress={() => updateSettings({ hideBalances: !hideBalances })} />
         </View>
-        <AmountText value={displayTotal} denom={displayDenom} hidden={hideBalances} size={34} />
+        {displayCurrency === 'XOF'
+          ? <TextLabel size={34} weight={fonts.displayBold}>{hideBalances ? '••••••' : formatXof(displayTotal)}</TextLabel>
+          : <AmountText value={displayTotal} denom={displayDenom} hidden={hideBalances} size={34} />}
         <TextLabel size={13} color={colors.textMuted}>
-          {hideBalances ? '••••••' : displayCurrency === 'XOF' ? `≈ ${formatAmount(total / 655.957, 'aEUR')}` : `≈ ${formatXof(total)}`}
+          {hideBalances ? '••••••' : displayCurrency === 'XOF' ? `≈ ${formatAmount(total / XOF_PER_EUR, 'EURC')}` : `≈ ${formatXof(total)}`}
         </TextLabel>
         <View style={styles.gasBadge}><View style={styles.gasDot} /><TextLabel size={11} color={colors.success} weight={fonts.bodySemi}>Gasless · frais offerts</TextLabel></View>
       </View>
@@ -94,7 +96,7 @@ export default function Home() {
           <WalletCard
             variant="blue"
             label="Virtuelle"
-            balance={hideBalances ? '••••••' : formatAmount(balances.aEUR, 'aEUR')}
+            balance={hideBalances ? '••••••' : formatAmount(balances.EURC, 'EURC')}
             last4={virtualCard.pan.replace(/\D/g, '').slice(-4)}
             expiry={virtualCard.expiry}
             frozen={virtualCard.frozen}
