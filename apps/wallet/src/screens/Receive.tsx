@@ -6,13 +6,16 @@ import { useLocalSearchParams } from 'expo-router';
 import { Share2, ShieldCheck } from 'lucide-react-native';
 import { useWalletStore } from '@/state/wallet';
 import { shortAddress } from '@/utils/format';
-import { colors, fonts, radius, spacing } from '@/theme/tokens';
+import { fonts, radius, spacing, type Palette } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { Card, CopyButton, Header, PressableScale, Screen, SegmentedControl, TextLabel, Toast } from '@/components/ui';
 
 type Rail = 'Euro (EUR)' | 'Dollar (USD)' | 'Ledger X';
 const accountAddress = 'ledgerx1q9p8v6d4c2x7m3n5k8h0t6w4s2j9p7f3d5g1c';
 
 export default function Receive() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ rail?: string }>();
   const [rail, setRail] = useState<Rail>(params.rail === 'Ledger X' ? 'Ledger X' : 'Euro (EUR)');
   const [toast, setToast] = useState(false);
@@ -31,7 +34,7 @@ export default function Receive() {
       <SegmentedControl options={['Euro (EUR)', 'Dollar (USD)', 'Ledger X']} selected={rail} onSelect={(value) => setRail(value as Rail)} />
       {rail === 'Euro (EUR)' ? (
         <>
-          <Card style={styles.bankCard}><View style={styles.bankHead}><View style={styles.bankBadge}><TextLabel size={13} weight={fonts.bodyBold} color={colors.text}>€</TextLabel></View><View><TextLabel size={14} weight={fonts.bodySemi}>Coordonnées SEPA</TextLabel><TextLabel size={11} color={colors.textDim}>Virements en euros</TextLabel></View><ShieldCheck size={17} color={colors.success} /></View></Card>
+          <Card style={styles.bankCard}><View style={styles.bankHead}><View style={styles.bankBadge}><TextLabel size={13} weight={fonts.bodyBold} color={colors.onPrimary}>€</TextLabel></View><View><TextLabel size={14} weight={fonts.bodySemi}>Coordonnées SEPA</TextLabel><TextLabel size={11} color={colors.textDim}>Virements en euros</TextLabel></View><ShieldCheck size={17} color={colors.success} /></View></Card>
           <Card style={styles.fields}>
             <BankField label="IBAN" value="FR76 3000 6000 0112 3456 7890 189" onCopy={copy} />
             <BankField label="BIC / SWIFT" value="AGRIFRPP" onCopy={copy} />
@@ -72,6 +75,8 @@ export default function Receive() {
 }
 
 function BankField({ label, value, onCopy }: { label: string; value: string; onCopy: (value: string) => void }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.field}>
       <View style={{ flex: 1, gap: 5 }}><TextLabel size={11} color={colors.textDim}>{label}</TextLabel><TextLabel size={13} weight={fonts.bodySemi}>{value}</TextLabel></View>
@@ -80,12 +85,12 @@ function BankField({ label, value, onCopy }: { label: string; value: string; onC
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   content: { paddingTop: spacing(1), gap: spacing(3) },
   bankCard: { padding: spacing(3) },
   bankHead: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
   bankBadge: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  usdBadge: { backgroundColor: colors.success },
+  usdBadge: { backgroundColor: colors.primarySoft },
   fields: { paddingVertical: spacing(1), paddingHorizontal: spacing(3) },
   field: { minHeight: 64, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   note: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },

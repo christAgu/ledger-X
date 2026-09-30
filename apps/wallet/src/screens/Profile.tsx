@@ -3,19 +3,23 @@ import type { ComponentType } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
-import { ChevronRight, Copy, QrCode, ShieldCheck, Wallet } from 'lucide-react-native';
+import { ChevronRight, Copy, Moon, QrCode, ShieldCheck, Sun, Wallet } from 'lucide-react-native';
 import { savePin, useWalletStore, verifyPin } from '@/state/wallet';
 import { shortAddress } from '@/utils/format';
-import { colors, fonts, radius, spacing } from '@/theme/tokens';
-import { Button, Card, Header, PinPad, PressableScale, Screen, Sheet, SwitchRow, TextLabel, Toast } from '@/components/ui';
+import { fonts, radius, spacing, type Palette } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
+import { Button, Card, Header, PinPad, PressableScale, Screen, SegmentedControl, Sheet, SwitchRow, TextLabel, Toast } from '@/components/ui';
 
 const fallbackAddress = 'ledgerx1q9p8v6d4c2x7m3n5k8h0t6w4s2j9p7f3d5g1c';
 
 export default function Profile() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const account = useWalletStore((state) => state.account);
   const tag = useWalletStore((state) => state.tag);
   const displayName = useWalletStore((state) => state.displayName);
   const settings = useWalletStore((state) => state.settings);
+  const AppearanceIcon = settings.themeMode === 'light' ? Sun : Moon;
   const updateSettings = useWalletStore((state) => state.updateSettings);
   const resetDemo = useWalletStore((state) => state.resetDemo);
   const [currencySheet, setCurrencySheet] = useState(false);
@@ -87,6 +91,17 @@ export default function Profile() {
       <TextLabel size={12} color={colors.textDim} weight={fonts.bodySemi}>PRÉFÉRENCES</TextLabel>
       <Card style={styles.sectionCard}>
         <ProfileLink icon={Wallet} title="Devise d'affichage" subtitle={settings.displayCurrency} onPress={() => setCurrencySheet(true)} />
+        <View style={styles.appearanceRow}>
+          <View style={styles.linkIcon}><AppearanceIcon size={17} color={colors.accent} /></View>
+          <TextLabel size={13} weight={fonts.bodySemi} style={styles.appearanceTitle}>Apparence</TextLabel>
+          <View style={styles.appearanceControl}>
+            <SegmentedControl
+              options={['Sombre', 'Clair']}
+              selected={settings.themeMode === 'light' ? 'Clair' : 'Sombre'}
+              onSelect={(value) => updateSettings({ themeMode: value === 'Clair' ? 'light' : 'dark' })}
+            />
+          </View>
+        </View>
         <SwitchRow title="Masquer les soldes" subtitle="Sur l'écran d'accueil" value={settings.hideBalances} onValueChange={(hideBalances) => updateSettings({ hideBalances })} />
       </Card>
 
@@ -129,6 +144,8 @@ export default function Profile() {
 }
 
 function ProfileLink({ icon: Icon, title, subtitle, onPress }: { icon: ComponentType<{ size?: number; color?: string }>; title: string; subtitle: string; onPress: () => void }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <PressableScale onPress={onPress} style={styles.profileLink}>
       <View style={styles.linkIcon}><Icon size={17} color={colors.accent} /></View>
@@ -138,7 +155,7 @@ function ProfileLink({ icon: Icon, title, subtitle, onPress }: { icon: Component
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   content: { paddingTop: spacing(1), gap: spacing(2) },
   profileHero: { alignItems: 'center', gap: spacing(1.5), paddingVertical: spacing(3) },
   avatarRing: { padding: 3, borderWidth: 1, borderColor: colors.border, borderRadius: 38 },
@@ -152,6 +169,9 @@ const styles = StyleSheet.create({
   onlineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success },
   profileLink: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: spacing(2), borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   linkIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  appearanceRow: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: spacing(2), borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  appearanceTitle: { flex: 1 },
+  appearanceControl: { width: 156 },
   currencyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), minHeight: 54, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   center: { textAlign: 'center', marginTop: spacing(1) },
   pinHint: { textAlign: 'center', marginBottom: spacing(3) },

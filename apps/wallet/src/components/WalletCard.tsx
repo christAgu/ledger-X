@@ -1,7 +1,8 @@
 import { Image, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LockKeyhole, Plus } from 'lucide-react-native';
-import { colors, fonts, spacing } from '@/theme/tokens';
+import { fonts, spacing, type Palette } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { PressableScale, TextLabel } from '@/components/ui';
 
 type WalletCardProps = {
@@ -27,6 +28,8 @@ export function WalletCard({
   width,
   empty = false,
 }: WalletCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const height = width * 0.62;
 
   const card = (
@@ -46,30 +49,30 @@ export function WalletCard({
       <Image source={require('@/assets/brand/acxa-mark.png')} style={styles.watermark} resizeMode="contain" />
       {empty ? (
         <View style={styles.emptyContent}>
-          <View style={styles.plusCircle}><Plus size={21} color={colors.text} /></View>
-          <TextLabel size={13} weight={fonts.bodySemi}>Ajouter une carte</TextLabel>
+          <View style={styles.plusCircle}><Plus size={21} color={colors.onPrimary} /></View>
+          <TextLabel size={13} weight={fonts.bodySemi} color={colors.onPrimary}>Ajouter une carte</TextLabel>
         </View>
       ) : (
         <View style={styles.content}>
           <View style={styles.topRow}>
-            <TextLabel size={15} weight={fonts.displayBold} style={styles.visa}>VISA</TextLabel>
+            <TextLabel size={15} weight={fonts.displayBold} color={colors.onPrimary} style={styles.visa}>VISA</TextLabel>
             <View style={styles.topMeta}>
-              <TextLabel size={9} color={colors.textMuted} weight={fonts.bodySemi}>{label}</TextLabel>
+              <TextLabel size={9} color="rgba(255,255,255,0.72)" weight={fonts.bodySemi}>{label}</TextLabel>
               {frozen ? (
                 <View style={styles.frozenChip}>
-                  <LockKeyhole size={10} color={colors.textMuted} />
-                  <TextLabel size={8} weight={fonts.bodySemi} color={colors.textMuted}>Gelée</TextLabel>
+                  <LockKeyhole size={10} color="rgba(255,255,255,0.72)" />
+                  <TextLabel size={8} weight={fonts.bodySemi} color="rgba(255,255,255,0.72)">Gelée</TextLabel>
                 </View>
               ) : null}
             </View>
           </View>
           <View style={styles.balance}>
-            <TextLabel size={10} color={colors.textMuted}>Solde</TextLabel>
-            <TextLabel size={20} weight={fonts.displayBold} numberOfLines={1} adjustsFontSizeToFit>{balance}</TextLabel>
+            <TextLabel size={10} color="rgba(255,255,255,0.72)">Solde</TextLabel>
+            <TextLabel size={20} weight={fonts.displayBold} color={colors.onPrimary} numberOfLines={1} adjustsFontSizeToFit>{balance}</TextLabel>
           </View>
           <View style={styles.bottomRow}>
-            <TextLabel size={11} weight={fonts.bodySemi}>•• {last4}</TextLabel>
-            <TextLabel size={11} weight={fonts.bodySemi}>{expiry}</TextLabel>
+            <TextLabel size={11} weight={fonts.bodySemi} color={colors.onPrimary}>•• {last4}</TextLabel>
+            <TextLabel size={11} weight={fonts.bodySemi} color={colors.onPrimary}>{expiry}</TextLabel>
           </View>
         </View>
       )}
@@ -83,7 +86,7 @@ export function WalletCard({
   ) : card;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (_colors: Palette) => StyleSheet.create({
   card: { position: 'relative', borderRadius: 20, overflow: 'hidden', justifyContent: 'space-between' },
   navyBorder: { borderWidth: 1, borderColor: 'rgba(138,180,255,0.18)' },
   topCircle: { position: 'absolute', width: 180, height: 180, borderRadius: 90, top: -94, right: -70, backgroundColor: 'rgba(255,255,255,0.1)', pointerEvents: 'none' },

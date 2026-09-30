@@ -10,12 +10,15 @@ import { useWalletStore, verifyPin } from '@/state/wallet';
 import { formatAmount } from '@/utils/format';
 import { wait } from '@/utils/wait';
 import { AmountText, AssetIcon, Button, Card, Header, Input, PageTitle, PinPad, PressableScale, Screen, Sheet, SuccessView, TextLabel } from '@/components/ui';
-import { colors, fonts, radius, spacing } from '@/theme/tokens';
+import { fonts, radius, spacing, type Palette, withAlpha } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { ProcessingOverlay } from '@/components/OrbitLoader';
 
 const denoms: Denom[] = ['aXOF', 'aEUR', 'aUSD', 'USDC', 'USDT', 'BTC', 'SOL'];
 
 export default function Convert() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const balances = useWalletStore((state) => state.balances);
   const updateBalance = useWalletStore((state) => state.updateBalance);
   const addTransaction = useWalletStore((state) => state.addTransaction);
@@ -75,7 +78,7 @@ export default function Convert() {
       <PageTitle title="Convertissez vos devises" subtitle="Des taux transparents, sans frais cachés." />
       <View style={styles.tokenStack}>
         <TokenPanel title="Vous envoyez" denom={from} amount={amount} balance={balances[from]} onAmountChange={setAmount} onPress={() => setPicker('from')} onMax={() => setAmount(String(balances[from]))} />
-        <Animated.View style={swapStyle}><PressableScale onPress={switchTokens} style={styles.swapButton}><ArrowDownUp size={19} color={colors.text} /></PressableScale></Animated.View>
+        <Animated.View style={swapStyle}><PressableScale onPress={switchTokens} style={styles.swapButton}><ArrowDownUp size={19} color={colors.onPrimary} /></PressableScale></Animated.View>
         <TokenPanel title="Vous recevez" denom={to} amount={quote.out.toFixed(to === 'aXOF' ? 0 : 2)} readOnly onPress={() => setPicker('to')} />
       </View>
       <Card style={styles.quoteCard}>
@@ -114,6 +117,8 @@ export default function Convert() {
 }
 
 function TokenPanel({ title, denom, amount, balance, onAmountChange, onPress, onMax, readOnly = false }: { title: string; denom: Denom; amount: string; balance?: number; onAmountChange?: (value: string) => void; onPress: () => void; onMax?: () => void; readOnly?: boolean }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Card style={styles.tokenPanel}>
       <View style={styles.rowBetween}><TextLabel size={12} color={colors.textMuted}>{title}</TextLabel>{balance !== undefined ? <TextLabel size={11} color={colors.textDim}>Disponible {formatAmount(balance, denom)}</TextLabel> : null}</View>
@@ -127,12 +132,14 @@ function TokenPanel({ title, denom, amount, balance, onAmountChange, onPress, on
 }
 
 function QuoteRow({ label, value, success = false }: { label: string; value: string; success?: boolean }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return <View style={styles.rowBetween}><TextLabel size={12} color={colors.textMuted}>{label}</TextLabel><TextLabel size={12} color={success ? colors.success : colors.text} weight={fonts.bodySemi}>{value}</TextLabel></View>;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   content: { paddingTop: spacing(1), gap: spacing(3) },
-  gasIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 18, backgroundColor: 'rgba(61,220,151,.1)' },
+  gasIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 18, backgroundColor: withAlpha(colors.success, 0.1) },
   tokenStack: { gap: spacing(2), position: 'relative' },
   tokenPanel: { gap: spacing(2), padding: spacing(3) },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -146,7 +153,7 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: colors.border },
   denomRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), paddingVertical: spacing(2), borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
   reviewAmount: { alignItems: 'center', paddingVertical: spacing(2) },
-  reviewFee: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(61,220,151,.09)', padding: spacing(2), borderRadius: radius.md },
+  reviewFee: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: withAlpha(colors.success, 0.09), padding: spacing(2), borderRadius: radius.md },
   center: { textAlign: 'center', marginBottom: spacing(3) },
   txText: { textAlign: 'center' },
 });

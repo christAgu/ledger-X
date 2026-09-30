@@ -39,7 +39,7 @@ type WalletState = {
   balances: Record<Denom, number>;
   transactions: WalletTransaction[];
   card: CardState;
-  settings: { biometricsEnabled: boolean; hideBalances: boolean; displayCurrency: 'XOF' | 'EUR' | 'USD' };
+  settings: { biometricsEnabled: boolean; hideBalances: boolean; displayCurrency: 'XOF' | 'EUR' | 'USD'; themeMode: 'dark' | 'light' };
   onboarded: boolean;
   setHydrated: (hydrated: boolean) => void;
   setPhone: (phone: string) => void;
@@ -88,7 +88,7 @@ const startingState = {
     expiry: '08/29',
     holder: 'AMINA TRAORÉ',
   },
-  settings: { biometricsEnabled: false, hideBalances: false, displayCurrency: 'XOF' as const },
+  settings: { biometricsEnabled: false, hideBalances: false, displayCurrency: 'EUR' as const, themeMode: 'dark' as const },
   onboarded: false,
 };
 
@@ -114,6 +114,14 @@ export const useWalletStore = create<WalletState>()(
     {
       name: 'ledgerx-wallet-state',
       storage: createJSONStorage(() => AsyncStorage),
+      version: 2,
+      migrate: (persisted, version) => {
+        const state = persisted as WalletState;
+        const settings = { ...startingState.settings, ...state.settings };
+        if (version < 1) settings.displayCurrency = 'EUR';
+        if (version < 2) settings.themeMode = 'dark';
+        return { ...state, settings };
+      },
       partialize: ({ hydrated: _hydrated, ...state }) => state,
       onRehydrateStorage: () => (state) => state?.setHydrated(true),
     },

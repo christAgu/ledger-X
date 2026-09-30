@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { Image, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { ArrowDownToLine, ArrowLeftRight, Bell, ChevronRight, QrCode, Send, Wallet } from 'lucide-react-native';
-import { colors, fonts, radius, spacing } from '@/theme/tokens';
+import { fonts, radius, spacing, type Palette, withAlpha } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { useWalletStore } from '@/state/wallet';
 import { valueInXof } from '@/services/rates';
 import type { Denom } from '@/services/ledgerx/types';
@@ -15,6 +16,8 @@ import { AmountText, AssetRow, Button, Card, EyeToggle, PressableScale, QuickAct
 const denoms: Denom[] = ['aXOF', 'aEUR', 'aUSD', 'USDC', 'USDT', 'BTC', 'SOL'];
 
 export default function Home() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [newCardOpen, setNewCardOpen] = useState(false);
   const { width: screenWidth } = useWindowDimensions();
   const balances = useWalletStore((state) => state.balances);
@@ -144,15 +147,15 @@ export default function Home() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   content: { paddingTop: spacing(1), gap: spacing(3) },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), zIndex: 1 },
   profileButton: { borderWidth: 1, borderColor: colors.border, padding: 2, borderRadius: 24 },
   avatar: { width: 42, height: 42, borderRadius: 21 },
-  topIcon: { width: 38, height: 38, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(14,34,70,.75)' },
+  topIcon: { width: 38, height: 38, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgElevated, borderWidth: 1, borderColor: colors.border },
   balanceHero: { paddingTop: spacing(4), paddingBottom: spacing(4), gap: spacing(1), zIndex: 1 },
   heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  gasBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 7, backgroundColor: 'rgba(61,220,151,.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill, marginTop: spacing(2) },
+  gasBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 7, backgroundColor: withAlpha(colors.success, 0.1), paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill, marginTop: spacing(2) },
   gasDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success },
   quickActions: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing(1), zIndex: 1 },
   cardsSection: { gap: spacing(2) },

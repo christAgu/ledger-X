@@ -3,7 +3,8 @@ import { FlatList, Image, StyleSheet, useWindowDimensions, View } from 'react-na
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Check, ChevronDown, Fingerprint, ShieldCheck, Sparkles } from 'lucide-react-native';
-import { colors, fonts, radius, spacing } from '@/theme/tokens';
+import { fonts, radius, spacing, type Palette } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { ledgerx } from '@/services/ledgerx';
 import { savePin, useWalletStore } from '@/state/wallet';
 import { shortAddress } from '@/utils/format';
@@ -28,6 +29,8 @@ const slides = [
 ];
 
 export function OnboardingLanding() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [slide, setSlide] = useState(0);
   const { width } = useWindowDimensions();
   const slideWidth = width - spacing(8);
@@ -80,6 +83,8 @@ const countries = [
 ];
 
 export function PhoneStep() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [country, setCountry] = useState(countries[0]);
   const [phone, setPhoneInput] = useState('97 00 00 00');
   const [picker, setPicker] = useState(false);
@@ -112,6 +117,8 @@ export function PhoneStep() {
 }
 
 export function OtpStep() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(30);
   useEffect(() => {
@@ -134,6 +141,8 @@ export function OtpStep() {
 }
 
 export function TagStep() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [tag, setTagInput] = useState('');
   const [availability, setAvailability] = useState<{ tag: string; available: boolean } | null>(null);
   const setTag = useWalletStore((state) => state.setTag);
@@ -158,13 +167,15 @@ export function TagStep() {
       <TextLabel size={12} color={checking ? colors.textDim : valid ? colors.success : available === false ? colors.danger : colors.textDim}>
         {checking ? 'Vérification de la disponibilité…' : valid ? '✓ Ce tag est disponible' : available === false ? 'Ce tag est déjà utilisé' : '3 à 20 caractères · lettres, chiffres et _'}
       </TextLabel>
-      <Card style={styles.tagPreview}><View style={styles.tagAvatar}><TextLabel size={20} weight={fonts.displayBold}>A</TextLabel></View><View style={{ flex: 1, gap: 4 }}><TextLabel size={14} weight={fonts.bodySemi}>Votre identifiant</TextLabel><TextLabel size={12} color={colors.textMuted}>Vos proches pourront vous envoyer de l&rsquo;argent via @{tag || 'votre_tag'}</TextLabel></View></Card>
+      <Card style={styles.tagPreview}><View style={styles.tagAvatar}><TextLabel size={20} weight={fonts.displayBold} color={colors.onPrimary}>A</TextLabel></View><View style={{ flex: 1, gap: 4 }}><TextLabel size={14} weight={fonts.bodySemi}>Votre identifiant</TextLabel><TextLabel size={12} color={colors.textMuted}>Vos proches pourront vous envoyer de l&rsquo;argent via @{tag || 'votre_tag'}</TextLabel></View></Card>
       <View style={styles.bottomAction}><Button disabled={!valid} onPress={() => { setTag(tag); router.push('/(onboarding)/pin'); }}>Continuer</Button></View>
     </Screen>
   );
 }
 
 export function PinStep() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [value, setValue] = useState('');
   const [firstPin, setFirstPin] = useState('');
   const [error, setError] = useState(false);
@@ -185,6 +196,8 @@ export function PinStep() {
 }
 
 export function BiometricsStep() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const updateSettings = useWalletStore((state) => state.updateSettings);
   const activate = async () => {
     const { authenticate } = await import('@/services/auth');
@@ -195,7 +208,7 @@ export function BiometricsStep() {
   return (
     <Screen>
       <StepIndicator step={4} total={6} />
-      <View style={styles.bioArt}><View style={styles.bioGlow}><Fingerprint color={colors.accent} size={76} strokeWidth={1.25} /></View><View style={styles.bioSpark}><Sparkles size={18} color={colors.glow} /></View></View>
+      <View style={styles.bioArt}><View style={styles.bioGlow}><Fingerprint color={colors.accent} size={76} strokeWidth={1.25} /></View><View style={styles.bioSpark}><Sparkles size={18} color={colors.accent} /></View></View>
       <View style={styles.bioCopy}><TextLabel size={27} weight={fonts.displayBold} style={styles.center}>Activer Face ID / empreinte</TextLabel><TextLabel size={14} color={colors.textMuted} style={styles.center}>Connectez-vous rapidement et sécurisez chaque action sensible.</TextLabel></View>
       <View style={styles.bottomAction}><Button onPress={activate}>Activer la biométrie</Button><Button kind="ghost" onPress={() => router.push('/(onboarding)/creating')}>Plus tard</Button></View>
     </Screen>
@@ -203,6 +216,8 @@ export function BiometricsStep() {
 }
 
 export function CreatingStep() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [step, setStep] = useState(0);
   const [address, setAddress] = useState('');
   const [failed, setFailed] = useState(false);
@@ -239,7 +254,7 @@ export function CreatingStep() {
       <View style={styles.createSteps}>
         {['Génération des clés MPC', 'Enregistrement x/auth', 'Subvention des frais (x/feegrant)'].map((label, index) => (
           <View style={styles.createStep} key={label}>
-            <View style={[styles.stepCheck, index < step && styles.stepCheckDone]}>{index < step ? <Check size={14} color={colors.text} /> : <View style={styles.stepDot} />}</View>
+            <View style={[styles.stepCheck, index < step && styles.stepCheckDone]}>{index < step ? <Check size={14} color={colors.ink} /> : <View style={styles.stepDot} />}</View>
             <TextLabel size={13} color={index < step ? colors.text : colors.textDim}>{label}</TextLabel>
           </View>
         ))}
@@ -251,16 +266,16 @@ export function CreatingStep() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   landing: { paddingBottom: spacing(2), justifyContent: 'space-between' },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
-  brandMark: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  brandMark: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.text === '#FFFFFF' ? colors.surface : colors.ink, alignItems: 'center', justifyContent: 'center' },
   logo: { width: 22, height: 24 },
   slide: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing(3), paddingHorizontal: spacing(2) },
   heroArt: { width: 250, height: 250, alignItems: 'center', justifyContent: 'center', marginBottom: spacing(4) },
-  orbitOne: { position: 'absolute', width: 230, height: 230, borderRadius: 115, borderWidth: 1, borderColor: 'rgba(138,180,255,.2)' },
-  orbitTwo: { position: 'absolute', width: 174, height: 174, borderRadius: 87, borderWidth: 1, borderColor: 'rgba(138,180,255,.25)' },
-  orbitCore: { width: 108, height: 108, borderRadius: 54, backgroundColor: '#0D2B5B', borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', boxShadow: '0px 0px 24px rgba(159,196,255,0.4)' },
+  orbitOne: { position: 'absolute', width: 230, height: 230, borderRadius: 115, borderWidth: 1, borderColor: colors.text === '#FFFFFF' ? 'rgba(138,180,255,.2)' : 'rgba(36,88,237,.22)' },
+  orbitTwo: { position: 'absolute', width: 174, height: 174, borderRadius: 87, borderWidth: 1, borderColor: colors.text === '#FFFFFF' ? 'rgba(138,180,255,.25)' : colors.border },
+  orbitCore: { width: 108, height: 108, borderRadius: 54, backgroundColor: colors.text === '#FFFFFF' ? '#0D2B5B' : colors.primary, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', boxShadow: '0px 0px 24px rgba(159,196,255,0.4)' },
   heroLogo: { width: 62, height: 68 },
   floatBadge: { position: 'absolute', right: 18, top: 36, width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   floatBadgeAlt: { top: 'auto', bottom: 30, left: 22, right: 'auto' },
