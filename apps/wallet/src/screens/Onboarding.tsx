@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { FlatList, Image, StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Check, ChevronDown, Fingerprint, ShieldCheck, Sparkles } from 'lucide-react-native';
 import { colors, fonts, radius, spacing } from '@/theme/tokens';
@@ -16,6 +16,7 @@ import {
   PinPad,
   PressableScale,
   Screen,
+  Sheet,
   StepIndicator,
   TextLabel,
 } from '@/components/ui';
@@ -99,20 +100,13 @@ export function PhoneStep() {
       <Input value={phone} onChangeText={setPhoneInput} prefix={country.dial} keyboardType="phone-pad" placeholder="Votre numéro" />
       <Card style={styles.noteCard}><ShieldCheck size={18} color={colors.accent} /><TextLabel size={12} color={colors.textMuted} style={{ flex: 1 }}>Votre numéro est protégé par un chiffrement de bout en bout.</TextLabel></Card>
       <View style={styles.bottomAction}><Button onPress={next}>Continuer</Button></View>
-      {picker && (
-        <View style={styles.pickerOverlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setPicker(false)} />
-          <Animated.View entering={FadeInUp.duration(220)} style={styles.countrySheet}>
-            <View style={styles.sheetHandle} />
-            <TextLabel size={18} weight={fonts.bodySemi}>Choisir un pays</TextLabel>
-            {countries.map((item) => (
-              <PressableScale key={item.dial} onPress={() => { setCountry(item); setPicker(false); }} style={styles.countryRow}>
-                <TextLabel size={20}>{item.flag}</TextLabel><TextLabel size={14} style={{ flex: 1 }}>{item.name}</TextLabel><TextLabel size={13} color={colors.textMuted}>{item.dial}</TextLabel>
-              </PressableScale>
-            ))}
-          </Animated.View>
-        </View>
-      )}
+      <Sheet visible={picker} title="Choisir un pays" onClose={() => setPicker(false)}>
+        {countries.map((item) => (
+          <PressableScale key={item.dial} onPress={() => { setCountry(item); setPicker(false); }} style={styles.countryRow}>
+            <TextLabel size={20}>{item.flag}</TextLabel><TextLabel size={14} style={{ flex: 1 }}>{item.name}</TextLabel><TextLabel size={13} color={colors.textMuted}>{item.dial}</TextLabel>
+          </PressableScale>
+        ))}
+      </Sheet>
     </Screen>
   );
 }
@@ -281,9 +275,6 @@ const styles = StyleSheet.create({
   countryText: { flex: 1, gap: 4 },
   noteCard: { flexDirection: 'row', gap: spacing(2), alignItems: 'center', padding: spacing(3) },
   bottomAction: { marginTop: 'auto', gap: spacing(1) },
-  pickerOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(1,7,20,.7)', justifyContent: 'flex-end', zIndex: 5 },
-  countrySheet: { backgroundColor: colors.bgElevated, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing(5), paddingBottom: spacing(7), gap: spacing(2) },
-  sheetHandle: { width: 42, height: 4, borderRadius: 4, backgroundColor: colors.border, alignSelf: 'center', marginBottom: spacing(2) },
   countryRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: spacing(3), borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
   tagPreview: { flexDirection: 'row', gap: spacing(3), alignItems: 'center' },
   tagAvatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
