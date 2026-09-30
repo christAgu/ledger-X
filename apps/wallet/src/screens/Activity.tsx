@@ -7,7 +7,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useWalletStore, type TransactionType, type WalletTransaction } from '@/state/wallet';
 import { valueInXof } from '@/services/rates';
 import { formatAmount, formatXof } from '@/utils/format';
-import { colors, fonts, radius, spacing } from '@/theme/tokens';
+import { fonts, radius, spacing, type Palette, withAlpha } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { Card, Header, PressableScale, Screen, Sheet, TextLabel, Toast } from '@/components/ui';
 import { getTransactionAppearance, TransactionRow, TransactionStatusPill } from '@/components/TransactionRow';
 
@@ -23,6 +24,8 @@ const weekdayLabels = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 type ActivityGroup = { key: string; label: string; items: WalletTransaction[]; netXof: number };
 
 export default function ActivityScreen() {
+  const { mode, colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const transactions = useWalletStore((state) => state.transactions);
   const [filter, setFilter] = useState('Tout');
   const [selected, setSelected] = useState<WalletTransaction | null>(null);
@@ -71,11 +74,11 @@ export default function ActivityScreen() {
         <View style={styles.summaryTotals}>
           <View style={styles.summaryColumn}>
             <TextLabel size={12} color="rgba(255,255,255,0.7)">Entrées</TextLabel>
-            <TextLabel size={16} weight={fonts.display} color={colors.success} numberOfLines={1}>+{formatXof(totals.incoming)}</TextLabel>
+            <TextLabel size={16} weight={fonts.display} color={mode === 'light' ? '#A6FFD6' : colors.success} numberOfLines={1}>+{formatXof(totals.incoming)}</TextLabel>
           </View>
           <View style={styles.summaryColumn}>
             <TextLabel size={12} color="rgba(255,255,255,0.7)">Sorties</TextLabel>
-            <TextLabel size={16} weight={fonts.display} numberOfLines={1}>−{formatXof(totals.outgoing)}</TextLabel>
+            <TextLabel size={16} weight={fonts.display} color={colors.onPrimary} numberOfLines={1}>−{formatXof(totals.outgoing)}</TextLabel>
           </View>
         </View>
         <TextLabel size={11} color="rgba(255,255,255,0.72)">Sorties sur 7 jours</TextLabel>
@@ -88,7 +91,7 @@ export default function ActivityScreen() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
         {filters.map((item) => (
           <PressableScale key={item} onPress={() => setFilter(item)} style={[styles.filterChip, filter === item && styles.filterActive]}>
-            <TextLabel size={12} weight={filter === item ? fonts.bodySemi : fonts.body} color={filter === item ? colors.text : colors.textDim}>{item}</TextLabel>
+            <TextLabel size={12} weight={filter === item ? fonts.bodySemi : fonts.body} color={filter === item ? colors.onPrimary : colors.textDim}>{item}</TextLabel>
           </PressableScale>
         ))}
       </ScrollView>
@@ -125,6 +128,8 @@ export default function ActivityScreen() {
 }
 
 function ChartBar({ label, amount, maxAmount, today, index }: { label: string; amount: number; maxAmount: number; today: boolean; index: number }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const targetHeight = amount > 0 ? Math.max(4, (amount / maxAmount) * 44) : 0;
   const height = useSharedValue(0);
   const animatedStyle = useAnimatedStyle(() => ({ height: height.value }));
@@ -139,13 +144,15 @@ function ChartBar({ label, amount, maxAmount, today, index }: { label: string; a
       <View style={styles.chartTrack}>
         <Animated.View style={[styles.chartBar, { backgroundColor: today ? '#EAF1FF' : 'rgba(255,255,255,0.35)' }, animatedStyle]} />
       </View>
-      <TextLabel size={10} color={today ? colors.text : 'rgba(255,255,255,0.66)'}>{label}</TextLabel>
+      <TextLabel size={10} color={today ? colors.onPrimary : 'rgba(255,255,255,0.66)'}>{label}</TextLabel>
     </View>
   );
 }
 
 function TransactionDetails({ item, onCopy }: { item: WalletTransaction; onCopy: () => void }) {
-  const { icon: Icon, tint, background } = getTransactionAppearance(item.type);
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const { icon: Icon, tint, background } = getTransactionAppearance(item.type, colors);
   const incoming = item.amount > 0;
   const time = new Date(item.date).toLocaleString('fr-FR');
   return (
@@ -180,6 +187,8 @@ function TransactionDetails({ item, onCopy }: { item: WalletTransaction; onCopy:
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.detailRow}>
       <TextLabel size={12} color={colors.textMuted}>{label}</TextLabel>
@@ -189,6 +198,8 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 function TimelineRow({ label, done }: { label: string; done: boolean }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return <View style={styles.timelineRow}><View style={[styles.timelineDot, done && styles.timelineDone]} /><TextLabel size={12} color={done ? colors.text : colors.textDim}>{label}</TextLabel></View>;
 }
 
@@ -224,7 +235,7 @@ function formatSignedXof(value: number) {
   return `${value > 0 ? '+' : value < 0 ? '−' : ''}${formatXof(Math.abs(value))}`;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   content: { paddingTop: spacing(1), gap: spacing(3) },
   summaryCard: { borderRadius: radius.lg, padding: spacing(4), gap: spacing(3), overflow: 'hidden' },
   summaryTotals: { flexDirection: 'row', gap: spacing(3) },
@@ -255,5 +266,5 @@ const styles = StyleSheet.create({
   timelineDone: { backgroundColor: colors.success, borderColor: colors.success },
   hashBox: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), padding: spacing(3), borderRadius: radius.md, backgroundColor: colors.bg, borderColor: colors.border, borderWidth: 1 },
   hashText: { flex: 1, minWidth: 0, gap: 4 },
-  feeNote: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: spacing(2), borderRadius: radius.md, backgroundColor: 'rgba(61,220,151,.08)' },
+  feeNote: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: spacing(2), borderRadius: radius.md, backgroundColor: withAlpha(colors.success, 0.08) },
 });

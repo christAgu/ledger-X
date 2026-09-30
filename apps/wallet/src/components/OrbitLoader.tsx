@@ -2,7 +2,8 @@ import { useEffect, useId } from 'react';
 import { Image, Modal, StyleSheet, View } from 'react-native';
 import Animated, { cancelAnimation, Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { Circle, Defs, RadialGradient, Stop, Svg } from 'react-native-svg';
-import { colors, fonts, spacing } from '@/theme/tokens';
+import { fonts, spacing, type Palette } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { TextLabel } from '@/components/ui';
 
 type OrbitElectronProps = {
@@ -17,6 +18,7 @@ type OrbitElectronProps = {
 };
 
 function OrbitElectron({ size, radius, haloSize, coreSize, duration, direction, startAngle, reducedMotion }: OrbitElectronProps) {
+  const styles = useThemedStyles(makeStyles);
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -49,6 +51,7 @@ function OrbitElectron({ size, radius, haloSize, coreSize, duration, direction, 
 }
 
 export function OrbitLoader({ size = 220 }: { size?: number }) {
+  const styles = useThemedStyles(makeStyles);
   const reducedMotion = useReducedMotion();
   const nucleusScale = useSharedValue(1);
   const gradientId = `orbit-glow-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
@@ -104,18 +107,20 @@ export function OrbitLoader({ size = 220 }: { size?: number }) {
 }
 
 export function ProcessingOverlay({ visible, title, subtitle }: { visible: boolean; title: string; subtitle: string }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => undefined}>
       <View style={styles.processingBackdrop}>
         <OrbitLoader />
-        <TextLabel size={22} weight={fonts.displayBold} style={styles.processingTitle}>{title}</TextLabel>
-        <TextLabel size={13} color={colors.textMuted} style={styles.processingSubtitle}>{subtitle}</TextLabel>
+        <TextLabel size={22} weight={fonts.displayBold} color={colors.onPrimary} style={styles.processingTitle}>{title}</TextLabel>
+        <TextLabel size={13} color="rgba(255,255,255,0.72)" style={styles.processingSubtitle}>{subtitle}</TextLabel>
       </View>
     </Modal>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (_colors: Palette) => StyleSheet.create({
   electronHalo: { position: 'absolute', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(138,180,255,0.18)', borderWidth: 1, borderColor: 'rgba(138,180,255,0.6)' },
   electronCore: { backgroundColor: '#EAF1FF' },
   nucleus: { position: 'absolute', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0E2246', borderWidth: 1, borderColor: 'rgba(138,180,255,0.4)' },

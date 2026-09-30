@@ -3,7 +3,8 @@ import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Activity, ArrowLeftRight, CreditCard, Home, UserRound } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { colors, fonts } from '@/theme/tokens';
+import { fonts, type Palette } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { TextLabel } from '@/components/ui';
 
 const tabItems = [
@@ -15,10 +16,12 @@ const tabItems = [
 ];
 
 function WalletTabBar({ state, navigation }: { state: { index: number; routes: { key: string; name: string }[] }; navigation: { navigate: (name: string) => void } }) {
+  const { mode, colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.tabContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-      <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+      <BlurView intensity={30} tint={mode} style={StyleSheet.absoluteFill} />
       <View style={styles.tabRow}>
         {tabItems.map((item) => {
           const focused = state.routes[state.index]?.name === item.name;
@@ -26,7 +29,7 @@ function WalletTabBar({ state, navigation }: { state: { index: number; routes: {
           return (
             <Pressable key={item.name} onPress={() => navigation.navigate(item.name)} style={styles.tabItem}>
               <View style={[styles.tabIcon, item.name === 'convert' && styles.convertIcon, focused && item.name !== 'convert' && styles.tabIconActive]}>
-                <Icon size={20} color={focused || item.name === 'convert' ? colors.text : colors.textDim} strokeWidth={focused ? 2.2 : 1.8} />
+                <Icon size={20} color={focused || item.name === 'convert' ? (item.name === 'convert' ? colors.onPrimary : colors.text) : colors.textDim} strokeWidth={focused ? 2.2 : 1.8} />
               </View>
               <TextLabel size={10} weight={focused ? fonts.bodySemi : fonts.body} color={focused ? colors.text : colors.textDim}>{item.label}</TextLabel>
             </Pressable>
@@ -38,6 +41,7 @@ function WalletTabBar({ state, navigation }: { state: { index: number; routes: {
 }
 
 export default function TabsLayout() {
+  const { colors } = useTheme();
   return (
     <Tabs
       initialRouteName="home"
@@ -48,8 +52,8 @@ export default function TabsLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  tabContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderTopColor: 'rgba(41,66,106,.65)', paddingTop: 10, backgroundColor: 'rgba(7,22,50,.83)' },
+const makeStyles = (colors: Palette) => StyleSheet.create({
+  tabContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 10, backgroundColor: colors.bgElevated },
   tabRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around' },
   tabItem: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', gap: 4 },
   tabIcon: { width: 32, height: 28, alignItems: 'center', justifyContent: 'center' },

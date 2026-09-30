@@ -5,10 +5,13 @@ import { router } from 'expo-router';
 import { Fingerprint, LockKeyhole } from 'lucide-react-native';
 import { authenticate, isBiometricAvailable } from '@/services/auth';
 import { useWalletStore, verifyPin } from '@/state/wallet';
-import { colors, fonts, spacing } from '@/theme/tokens';
+import { fonts, spacing, type Palette } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { PinPad, PressableScale, Screen, TextLabel } from '@/components/ui';
 
 export default function LockScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
@@ -58,7 +61,7 @@ export default function LockScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   content: { alignItems: 'center', paddingTop: spacing(5), gap: spacing(2) },
   brand: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), marginBottom: spacing(4) },
   mark: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' },

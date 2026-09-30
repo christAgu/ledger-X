@@ -1,9 +1,10 @@
 import { Redirect } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
-import { colors } from '@/theme/tokens';
+import { useTheme } from '@/theme/ThemeProvider';
 import { useWalletStore } from '@/state/wallet';
 
 export default function IndexRoute() {
+  const { colors } = useTheme();
   const hydrated = useWalletStore((state) => state.hydrated);
   const onboarded = useWalletStore((state) => state.onboarded);
   if (!hydrated) {

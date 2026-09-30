@@ -3,7 +3,8 @@ import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { cancelAnimation, Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { Circle, Defs, RadialGradient, Stop, Svg } from 'react-native-svg';
-import { spacing } from '@/theme/tokens';
+import { spacing, type Palette } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 
 type SmokeBlobConfig = {
   color: string;
@@ -27,6 +28,7 @@ const smokeBlobs: SmokeBlobConfig[] = [
 ];
 
 function SmokeBlob({ color, duration, left, opacity, phase, phase2, size, top, ampX, ampY }: SmokeBlobConfig) {
+  const styles = useThemedStyles(makeStyles);
   const reducedMotion = useReducedMotion();
   const gradientId = `smoke-${useId().replace(/:/g, '')}`;
   const progress = useSharedValue(0);
@@ -68,6 +70,8 @@ function SmokeBlob({ color, duration, left, opacity, phase, phase2, size, top, a
 }
 
 export function AnimatedGradientBackdrop({ height }: { height: number }) {
+  const { mode, colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const reducedMotion = useReducedMotion();
   const shade = useSharedValue(0);
 
@@ -77,9 +81,15 @@ export function AnimatedGradientBackdrop({ height }: { height: number }) {
     return () => cancelAnimation(shade);
   }, [reducedMotion, shade]);
 
-  const layerAStyle = useAnimatedStyle(() => ({ opacity: 0.6 - shade.value * 0.4 }));
+  const layerAStyle = useAnimatedStyle(() => ({ opacity: mode === 'light' ? 0.6 : 0.6 - shade.value * 0.4 }), [mode]);
   const lightOverlayStyle = useAnimatedStyle(() => ({ opacity: 1 - shade.value }));
-  const darkOverlayStyle = useAnimatedStyle(() => ({ opacity: shade.value * 0.45 }));
+  const darkOverlayStyle = useAnimatedStyle(() => ({ opacity: mode === 'light' ? 0 : shade.value * 0.45 }), [mode]);
+  const layerAColors: readonly [string, string, string] = mode === 'light'
+    ? ['#DCE7FF', '#EEF3FF', 'rgba(244,246,251,0)']
+    : ['#2458ED', '#12306E', 'rgba(7,22,50,0)'];
+  const layerBColors: readonly [string, string, string] = mode === 'light'
+    ? ['#DCE7FF', '#EEF3FF', 'rgba(244,246,251,0)']
+    : ['#0B2A7A', '#3A6BFF', 'rgba(7,22,50,0)'];
 
   return (
     <View
@@ -88,23 +98,28 @@ export function AnimatedGradientBackdrop({ height }: { height: number }) {
         { height, marginHorizontal: -spacing(5), marginTop: -spacing(1) },
       ]}>
       <Animated.View style={[StyleSheet.absoluteFill, layerAStyle]}>
-        <LinearGradient colors={['#2458ED', '#12306E', 'rgba(7,22,50,0)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={layerAColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       </Animated.View>
       <View style={[StyleSheet.absoluteFill, styles.layerB]}>
-        <LinearGradient colors={['#0B2A7A', '#3A6BFF', 'rgba(7,22,50,0)']} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={layerBColors} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
       </View>
-      {smokeBlobs.map((blob, index) => <SmokeBlob key={`smoke-${index}`} {...blob} />)}
+      {smokeBlobs.map((blob, index) => <SmokeBlob key={`smoke-${index}`} {...blob} opacity={blob.opacity * (mode === 'light' ? 0.8 : 1)} />)}
       <Animated.View style={[StyleSheet.absoluteFill, styles.lightOverlay, lightOverlayStyle]}>
-        <LinearGradient colors={['rgba(138,180,255,0.18)', 'rgba(138,180,255,0)']} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient
+          colors={mode === 'light' ? ['rgba(255,255,255,0.35)', 'rgba(255,255,255,0)'] : ['rgba(138,180,255,0.18)', 'rgba(138,180,255,0)']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
       </Animated.View>
-      <Animated.View style={[StyleSheet.absoluteFill, styles.darkOverlay, darkOverlayStyle]} />
-      <View style={[StyleSheet.absoluteFill, styles.dim]} />
-      <LinearGradient colors={['rgba(7,22,50,0)', '#0A2147']} locations={[0, 1]} style={styles.fade} />
+      {mode === 'dark' ? <Animated.View style={[StyleSheet.absoluteFill, styles.darkOverlay, darkOverlayStyle]} /> : null}
+      {mode === 'dark' ? <View style={[StyleSheet.absoluteFill, styles.dim]} /> : null}
+      <LinearGradient colors={[mode === 'light' ? 'rgba(244,246,251,0)' : 'rgba(7,22,50,0)', colors.heroFade]} locations={[0, 1]} style={styles.fade} />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (_colors: Palette) => StyleSheet.create({
   container: { position: 'absolute', top: 0, left: 0, right: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' },
   blob: { position: 'absolute' },
   layerB: { opacity: 0.3 },

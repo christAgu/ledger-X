@@ -2,7 +2,8 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
 import { ArrowDownToLine, ArrowLeftRight, ArrowUpRight, CreditCard, QrCode, type LucideIcon } from 'lucide-react-native';
 import type { TransactionType, WalletTransaction } from '@/state/wallet';
-import { colors, fonts, radius } from '@/theme/tokens';
+import { fonts, radius, type Palette, withAlpha } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { formatAmount } from '@/utils/format';
 import { PressableScale, TextLabel } from '@/components/ui';
 
@@ -15,25 +16,27 @@ const icons: Record<TransactionType, LucideIcon> = {
   card: CreditCard,
 };
 
-const appearances: Record<TransactionType, { tint: string; background: string }> = {
-  deposit: { tint: colors.success, background: 'rgba(61,220,151,0.14)' },
-  send: { tint: colors.accent, background: 'rgba(36,88,237,0.22)' },
-  receive: { tint: colors.success, background: 'rgba(61,220,151,0.14)' },
-  cashout: { tint: colors.warning, background: 'rgba(255,181,71,0.14)' },
-  convert: { tint: '#A99BFF', background: 'rgba(169,155,255,0.14)' },
-  card: { tint: '#9FC4FF', background: 'rgba(159,196,255,0.14)' },
-};
-
-export function getTransactionAppearance(type: TransactionType) {
-  return { icon: icons[type], ...appearances[type] };
+export function getTransactionAppearance(type: TransactionType, colors: Palette) {
+  const cardTint = colors.text === '#FFFFFF' ? '#9FC4FF' : colors.accent;
+  const tones: Record<TransactionType, { tint: string; background: string }> = {
+    deposit: { tint: colors.success, background: withAlpha(colors.success, 0.14) },
+    send: { tint: colors.accent, background: withAlpha(colors.primary, 0.22) },
+    receive: { tint: colors.success, background: withAlpha(colors.success, 0.14) },
+    cashout: { tint: colors.warning, background: withAlpha(colors.warning, 0.14) },
+    convert: { tint: '#A99BFF', background: withAlpha('#A99BFF', 0.14) },
+    card: { tint: cardTint, background: withAlpha(cardTint, 0.14) },
+  };
+  return { icon: icons[type], ...tones[type] };
 }
 
 export function TransactionStatusPill({ status, successLabel = 'Terminé' }: { status: WalletTransaction['status']; successLabel?: string }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const tone = status === 'pending'
-    ? { label: 'En attente', color: colors.warning, background: 'rgba(255,181,71,0.14)' }
+    ? { label: 'En attente', color: colors.warning, background: withAlpha(colors.warning, 0.14) }
     : status === 'failed'
-      ? { label: 'Échoué', color: colors.danger, background: 'rgba(255,92,122,0.14)' }
-      : { label: successLabel, color: colors.success, background: 'rgba(61,220,151,0.14)' };
+      ? { label: 'Échoué', color: colors.danger, background: withAlpha(colors.danger, 0.14) }
+      : { label: successLabel, color: colors.success, background: withAlpha(colors.success, 0.14) };
   return (
     <View style={[styles.statusPill, { backgroundColor: tone.background }]}>
       <TextLabel size={10} weight={fonts.bodySemi} color={tone.color}>{tone.label}</TextLabel>
@@ -42,7 +45,9 @@ export function TransactionStatusPill({ status, successLabel = 'Terminé' }: { s
 }
 
 export function TransactionRow({ item, onPress, index }: { item: WalletTransaction; onPress?: () => void; index?: number }) {
-  const { icon: Icon, tint, background } = getTransactionAppearance(item.type);
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const { icon: Icon, tint, background } = getTransactionAppearance(item.type, colors);
   const incoming = item.amount > 0;
   const time = new Date(item.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   const content = (
@@ -71,7 +76,7 @@ export function TransactionRow({ item, onPress, index }: { item: WalletTransacti
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   tile: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: radius.lg, backgroundColor: colors.surface },
   icon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   middle: { flex: 1, minWidth: 0, gap: 4 },

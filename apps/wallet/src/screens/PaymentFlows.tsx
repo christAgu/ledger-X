@@ -8,7 +8,8 @@ import type { CashoutRail, Denom } from '@/services/ledgerx/types';
 import { useWalletStore, verifyPin } from '@/state/wallet';
 import { formatAmount } from '@/utils/format';
 import { wait } from '@/utils/wait';
-import { colors, fonts, radius, spacing } from '@/theme/tokens';
+import { fonts, radius, spacing, type Palette } from '@/theme/tokens';
+import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { AssetIcon, Button, Card, Header, Input, PageTitle, PinPad, PressableScale, Screen, SegmentedControl, Sheet, StepIndicator, SuccessView, TextLabel } from '@/components/ui';
 import { ProcessingOverlay } from '@/components/OrbitLoader';
 
@@ -17,6 +18,8 @@ const modes: SendMode[] = ['@tag Ledger X', 'Mobile Money', 'Compte bancaire'];
 const denoms: Denom[] = ['aXOF', 'aEUR', 'aUSD', 'USDC', 'USDT', 'BTC', 'SOL'];
 
 export function SendScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [mode, setMode] = useState<SendMode>('@tag Ledger X');
   const [step, setStep] = useState<'destination' | 'amount' | 'review' | 'success'>('destination');
   const [tag, setTag] = useState('fatou');
@@ -175,6 +178,8 @@ export function SendScreen() {
 }
 
 export function CashoutScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [rail, setRail] = useState<CashoutRail>('mtn-momo');
   const [step, setStep] = useState<'destination' | 'amount' | 'review' | 'success'>('destination');
   const [destination, setDestination] = useState(useWalletStore.getState().phone);
@@ -256,14 +261,18 @@ export function CashoutScreen() {
 }
 
 function DestinationCard({ active, icon: Icon, title, subtitle, onPress }: { active: boolean; icon: LucideIcon; title: string; subtitle: string; onPress: () => void }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return <PressableScale onPress={onPress} style={[styles.destinationCard, active && styles.destinationActive]}><View style={styles.destinationIcon}><Icon size={18} color={colors.accent} /></View><View style={{ flex: 1, gap: 4 }}><TextLabel size={14} weight={fonts.bodySemi}>{title}</TextLabel><TextLabel size={11} color={colors.textDim}>{subtitle}</TextLabel></View>{active ? <CircleDollarSign size={19} color={colors.accent} /> : null}</PressableScale>;
 }
 
 function ReviewLine({ label, value, green = false, bold = false }: { label: string; value: string; green?: boolean; bold?: boolean }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return <View style={styles.reviewLine}><TextLabel size={13} color={colors.textMuted}>{label}</TextLabel><TextLabel size={13} weight={bold ? fonts.bodyBold : fonts.bodySemi} color={green ? colors.success : colors.text}>{value}</TextLabel></View>;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   content: { paddingTop: spacing(1), gap: spacing(3) },
   fieldLabel: { marginTop: spacing(1) },
   contactRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: spacing(2), borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
@@ -279,7 +288,7 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: colors.border },
   center: { textAlign: 'center', marginBottom: spacing(3) },
   destinationCard: { minHeight: 74, flexDirection: 'row', alignItems: 'center', gap: spacing(2), borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: spacing(3) },
-  destinationActive: { borderColor: colors.primary, backgroundColor: '#102752' },
+  destinationActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   destinationIcon: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 21, backgroundColor: colors.primarySoft },
   chips: { flexDirection: 'row', gap: 8 },
   chip: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: radius.pill, backgroundColor: colors.surfaceAlt },
