@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Image, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Activity, ArrowDownToLine, ArrowLeftRight, Bell, ChevronRight, QrCode, Send, Wallet } from 'lucide-react-native';
 import { colors, fonts, radius, spacing } from '@/theme/tokens';
@@ -8,17 +8,22 @@ import { valueInXof } from '@/services/rates';
 import type { Denom } from '@/services/ledgerx/types';
 import { formatAmount, formatXof } from '@/utils/format';
 import { AnimatedGradientBackdrop } from '@/components/AnimatedGradient';
-import { AmountText, AssetRow, Card, EyeToggle, PressableScale, QuickAction, Screen, TextLabel } from '@/components/ui';
+import { WalletCard } from '@/components/WalletCard';
+import { AmountText, AssetRow, Button, Card, EyeToggle, PressableScale, QuickAction, Screen, Sheet, TextLabel } from '@/components/ui';
 
 const denoms: Denom[] = ['aXOF', 'aEUR', 'aUSD', 'USDC', 'USDT', 'BTC', 'SOL'];
 
 export default function Home() {
+  const [newCardOpen, setNewCardOpen] = useState(false);
+  const { width: screenWidth } = useWindowDimensions();
   const balances = useWalletStore((state) => state.balances);
   const transactions = useWalletStore((state) => state.transactions);
+  const virtualCard = useWalletStore((state) => state.card);
   const { hideBalances, displayCurrency } = useWalletStore((state) => state.settings);
   const updateSettings = useWalletStore((state) => state.updateSettings);
   const tag = useWalletStore((state) => state.tag);
   const total = useMemo(() => denoms.reduce((sum, denom) => sum + valueInXof(balances[denom], denom), 0), [balances]);
+  const cardWidth = Math.min(260, screenWidth * 0.64);
   const displayDenom: Denom = displayCurrency === 'EUR' ? 'aEUR' : displayCurrency === 'USD' ? 'aUSD' : 'aXOF';
   const displayTotal = displayCurrency === 'EUR' ? total / 655.957 : displayCurrency === 'USD' ? total / 600 : total;
   return (
@@ -54,6 +59,44 @@ export default function Home() {
         <QuickAction label="Recevoir" icon={QrCode} onPress={() => router.push('/receive')} />
         <QuickAction label="Retirer" icon={Wallet} onPress={() => router.push('/cashout')} />
         <QuickAction label="Convertir" icon={ArrowLeftRight} primary onPress={() => router.push('/convert')} />
+      </View>
+
+      <View style={styles.cardsSection}>
+        <View style={styles.sectionHead}>
+          <TextLabel size={18} weight={fonts.display}>Mes cartes</TextLabel>
+          <PressableScale onPress={() => setNewCardOpen(true)} style={styles.addCardButton}>
+            <TextLabel size={12} weight={fonts.bodySemi} color={colors.accent}>+ Ajouter</TextLabel>
+          </PressableScale>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.cardsScrollContent}
+          style={styles.cardsScroll}
+          snapToInterval={cardWidth + spacing(3)}
+          snapToAlignment="start"
+          decelerationRate="fast">
+          <WalletCard
+            variant="blue"
+            label="Virtuelle"
+            balance={hideBalances ? '••••••' : formatAmount(balances.aEUR, 'aEUR')}
+            last4={virtualCard.pan.replace(/\D/g, '').slice(-4)}
+            expiry={virtualCard.expiry}
+            frozen={virtualCard.frozen}
+            onPress={() => router.push('/card')}
+            width={cardWidth}
+          />
+          <WalletCard
+            variant="navy"
+            label="Ajouter une carte"
+            balance=""
+            last4=""
+            expiry=""
+            empty
+            onPress={() => setNewCardOpen(true)}
+            width={cardWidth}
+          />
+        </ScrollView>
       </View>
 
       <PressableScale onPress={() => router.push('/receive')} style={styles.promo}>
@@ -101,6 +144,10 @@ export default function Home() {
           </View>
         ))}
       </Card>
+      <Sheet visible={newCardOpen} title="Nouvelle carte" onClose={() => setNewCardOpen(false)}>
+        <TextLabel size={13} color={colors.textMuted} style={styles.cardSheetText}>Cartes USD et carte physique : bientôt disponibles.</TextLabel>
+        <Button onPress={() => setNewCardOpen(false)}>Compris</Button>
+      </Sheet>
     </Screen>
   );
 }
@@ -116,6 +163,10 @@ const styles = StyleSheet.create({
   gasBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 7, backgroundColor: 'rgba(61,220,151,.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill, marginTop: spacing(2) },
   gasDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success },
   quickActions: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing(1), zIndex: 1 },
+  cardsSection: { gap: spacing(2) },
+  addCardButton: { backgroundColor: colors.bgElevated, borderRadius: radius.pill, paddingHorizontal: spacing(3), paddingVertical: spacing(1.5) },
+  cardsScroll: { marginHorizontal: -spacing(5) },
+  cardsScrollContent: { paddingHorizontal: spacing(5), gap: spacing(3) },
   promo: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing(3), gap: spacing(2) },
   promoIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   promoCopy: { flex: 1, gap: 3 },
@@ -124,4 +175,5 @@ const styles = StyleSheet.create({
   recentCard: { padding: spacing(3) },
   recentRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), paddingVertical: spacing(2), borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   recentIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  cardSheetText: { marginBottom: spacing(3) },
 });

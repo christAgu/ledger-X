@@ -56,7 +56,9 @@ export default function CardScreen() {
     <Screen scroll tabBarClearance style={styles.content}>
       <Header title="Ma carte" back={false} right={<PressableScale><TextLabel size={20} color={colors.textMuted}>···</TextLabel></PressableScale>} />
       <Animated.View style={[styles.cardShell, animatedCard]}>
-        <LinearGradient colors={card.frozen ? ['#28374D', '#19283D'] : ['#16458A', '#0C2B5A', '#071632']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.bankCard, flipped && styles.reverseFace]}>
+        <LinearGradient colors={card.frozen ? ['#28374D', '#19283D'] : ['#4F7BFF', '#2458ED', '#1B3FB8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.bankCard, flipped && styles.reverseFace]}>
+          <View style={styles.cardGlowTop} />
+          <View style={styles.cardGlowBottom} />
           <Image source={require('@/assets/brand/acxa-mark.png')} style={styles.cardWatermark} resizeMode="contain" />
           {!flipped ? (
             <>
@@ -124,6 +126,8 @@ const styles = StyleSheet.create({
   content: { paddingTop: spacing(1), gap: spacing(3) },
   cardShell: { width: '100%', aspectRatio: 1.586, backfaceVisibility: 'hidden' },
   bankCard: { flex: 1, borderRadius: radius.lg, padding: spacing(4), overflow: 'hidden', justifyContent: 'space-between' },
+  cardGlowTop: { position: 'absolute', width: 180, height: 180, borderRadius: 90, top: -94, right: -70, backgroundColor: 'rgba(255,255,255,0.1)', pointerEvents: 'none' },
+  cardGlowBottom: { position: 'absolute', width: 140, height: 140, borderRadius: 70, bottom: -84, left: -54, backgroundColor: 'rgba(255,255,255,0.06)', pointerEvents: 'none' },
   reverseFace: { transform: [{ rotateY: '180deg' }] },
   cardWatermark: { position: 'absolute', right: -20, bottom: -50, width: 210, height: 235, opacity: 0.08 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
