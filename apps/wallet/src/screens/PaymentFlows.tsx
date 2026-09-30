@@ -7,8 +7,10 @@ import { ledgerx } from '@/services/ledgerx';
 import type { CashoutRail, Denom } from '@/services/ledgerx/types';
 import { useWalletStore, verifyPin } from '@/state/wallet';
 import { formatAmount } from '@/utils/format';
+import { wait } from '@/utils/wait';
 import { colors, fonts, radius, spacing } from '@/theme/tokens';
 import { AssetIcon, Button, Card, Header, Input, PageTitle, PinPad, PressableScale, Screen, SegmentedControl, Sheet, StepIndicator, SuccessView, TextLabel } from '@/components/ui';
+import { ProcessingOverlay } from '@/components/OrbitLoader';
 
 type SendMode = '@tag Ledger X' | 'Mobile Money' | 'Compte bancaire';
 const modes: SendMode[] = ['@tag Ledger X', 'Mobile Money', 'Compte bancaire'];
@@ -72,8 +74,9 @@ export function SendScreen() {
   };
   const send = async () => {
     const destination = resolved?.address ?? 'ledgerx1q9p8v6d4c2x7m3n5k8h0t6w4s2j9p7f3d5g1c';
+    setPinOpen(false);
     setLoading(true);
-    const result = await ledgerx.signAndBroadcast({ type: 'MsgSend', toAddress: destination, denom, amount: value, memo: mode });
+    const [result] = await Promise.all([ledgerx.signAndBroadcast({ type: 'MsgSend', toAddress: destination, denom, amount: value, memo: mode }), wait(1600)]);
     setTxShort(`${result.txHash.slice(0, 8)}…${result.txHash.slice(-6)}`);
     updateBalance(denom, -value);
     addTransaction({
@@ -87,7 +90,6 @@ export function SendScreen() {
       fee,
     });
     setLoading(false);
-    setPinOpen(false);
     setStep('success');
   };
   const submitPin = async (code: string) => {
@@ -167,6 +169,7 @@ export function SendScreen() {
         <PinPad value={pin} onChange={(next) => { setPin(next); setPinError(false); }} onComplete={submitPin} error={pinError} />
         {pinError ? <TextLabel size={12} color={colors.danger} style={styles.center}>Code incorrect. Réessayez.</TextLabel> : null}
       </Sheet>
+      <ProcessingOverlay visible={loading} title="Envoi en cours…" subtitle="Signature du smart account · MsgSend" />
     </Screen>
   );
 }
@@ -194,13 +197,13 @@ export function CashoutScreen() {
     else setPinOpen(true);
   };
   const cashout = async () => {
+    setPinOpen(false);
     setLoading(true);
-    const result = await ledgerx.signAndBroadcast({ type: 'MsgCashout', denom: 'aXOF', amount: value, rail, destination });
+    const [result] = await Promise.all([ledgerx.signAndBroadcast({ type: 'MsgCashout', denom: 'aXOF', amount: value, rail, destination }), wait(1600)]);
     setTxShort(`${result.txHash.slice(0, 8)}…${result.txHash.slice(-6)}`);
     updateBalance('aXOF', -value);
     addTransaction({ type: 'cashout', title: `Retrait ${railName}`, detail: destination, amount: -value, denom: 'aXOF', status: 'success', hash: result.txHash, fee });
     setLoading(false);
-    setPinOpen(false);
     setStep('success');
   };
   const submitPin = async (code: string) => {
@@ -247,6 +250,7 @@ export function CashoutScreen() {
         <PinPad value={pin} onChange={(next) => { setPin(next); setPinError(false); }} onComplete={submitPin} error={pinError} />
         {pinError ? <TextLabel size={12} color={colors.danger} style={styles.center}>Code incorrect. Réessayez.</TextLabel> : null}
       </Sheet>
+      <ProcessingOverlay visible={loading} title="Retrait en cours…" subtitle={`Vers ${railName}`} />
     </Screen>
   );
 }

@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Image, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
-import { Activity, ArrowDownToLine, ArrowLeftRight, Bell, ChevronRight, QrCode, Send, Wallet } from 'lucide-react-native';
+import { ArrowDownToLine, ArrowLeftRight, Bell, ChevronRight, QrCode, Send, Wallet } from 'lucide-react-native';
 import { colors, fonts, radius, spacing } from '@/theme/tokens';
 import { useWalletStore } from '@/state/wallet';
 import { valueInXof } from '@/services/rates';
 import type { Denom } from '@/services/ledgerx/types';
 import { formatAmount, formatXof } from '@/utils/format';
 import { AnimatedGradientBackdrop } from '@/components/AnimatedGradient';
+import { TransactionRow } from '@/components/TransactionRow';
 import { WalletCard } from '@/components/WalletCard';
 import { AmountText, AssetRow, Button, Card, EyeToggle, PressableScale, QuickAction, Screen, Sheet, TextLabel } from '@/components/ui';
 
@@ -130,20 +131,11 @@ export default function Home() {
         <TextLabel size={18} weight={fonts.display}>Activité récente</TextLabel>
         <PressableScale onPress={() => router.push('/activity')}><TextLabel size={12} color={colors.accent}>Tout voir</TextLabel></PressableScale>
       </View>
-      <Card style={styles.recentCard}>
-        {transactions.slice(0, 3).map((transaction) => (
-          <View key={transaction.id} style={styles.recentRow}>
-            <View style={styles.recentIcon}><Activity size={17} color={colors.accent} /></View>
-            <View style={{ flex: 1, gap: 4 }}>
-              <TextLabel size={13} weight={fonts.bodySemi}>{transaction.title}</TextLabel>
-              <TextLabel size={11} color={colors.textDim}>{new Date(transaction.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</TextLabel>
-            </View>
-            <TextLabel size={13} weight={fonts.bodySemi} color={transaction.amount > 0 ? colors.success : colors.text}>
-              {transaction.amount > 0 ? '+' : ''}{formatAmount(transaction.amount, transaction.denom)}
-            </TextLabel>
-          </View>
+      <View style={styles.recentList}>
+        {transactions.slice(0, 3).map((transaction, index) => (
+          <TransactionRow key={transaction.id} item={transaction} index={index} />
         ))}
-      </Card>
+      </View>
       <Sheet visible={newCardOpen} title="Nouvelle carte" onClose={() => setNewCardOpen(false)}>
         <TextLabel size={13} color={colors.textMuted} style={styles.cardSheetText}>Cartes USD et carte physique : bientôt disponibles.</TextLabel>
         <Button onPress={() => setNewCardOpen(false)}>Compris</Button>
@@ -172,8 +164,6 @@ const styles = StyleSheet.create({
   promoCopy: { flex: 1, gap: 3 },
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing(1) },
   assetCard: { padding: spacing(2), paddingHorizontal: spacing(3) },
-  recentCard: { padding: spacing(3) },
-  recentRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), paddingVertical: spacing(2), borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
-  recentIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  recentList: { gap: 8 },
   cardSheetText: { marginBottom: spacing(3) },
 });

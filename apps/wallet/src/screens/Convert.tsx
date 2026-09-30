@@ -8,8 +8,10 @@ import type { Denom } from '@/services/ledgerx/types';
 import { getQuote } from '@/services/rates';
 import { useWalletStore, verifyPin } from '@/state/wallet';
 import { formatAmount } from '@/utils/format';
+import { wait } from '@/utils/wait';
 import { AmountText, AssetIcon, Button, Card, Header, Input, PageTitle, PinPad, PressableScale, Screen, Sheet, SuccessView, TextLabel } from '@/components/ui';
 import { colors, fonts, radius, spacing } from '@/theme/tokens';
+import { ProcessingOverlay } from '@/components/OrbitLoader';
 
 const denoms: Denom[] = ['aXOF', 'aEUR', 'aUSD', 'USDC', 'USDT', 'BTC', 'SOL'];
 
@@ -47,8 +49,10 @@ export default function Convert() {
     }
   };
   const convert = async () => {
+    setPinOpen(false);
+    setReviewOpen(false);
     setLoading(true);
-    const result = await ledgerx.signAndBroadcast({ type: 'MsgSwap', fromDenom: from, toDenom: to, amount: value, minOut: quote.minOut });
+    const [result] = await Promise.all([ledgerx.signAndBroadcast({ type: 'MsgSwap', fromDenom: from, toDenom: to, amount: value, minOut: quote.minOut }), wait(1600)]);
     updateBalance(from, -value);
     updateBalance(to, quote.out);
     addTransaction({ type: 'convert', title: `Conversion ${from} → ${to}`, detail: 'Taux garanti · frais 0,5 %', amount: -value, denom: from, status: 'success', hash: result.txHash, fee: quote.fee });
@@ -104,6 +108,7 @@ export default function Convert() {
         <PinPad value={pin} onChange={(next) => { setPin(next); setError(false); }} onComplete={submitPin} error={error} />
         {error ? <TextLabel size={12} color={colors.danger} style={styles.center}>Code incorrect. Réessayez.</TextLabel> : null}
       </Sheet>
+      <ProcessingOverlay visible={loading} title="Échange en cours…" subtitle="MsgSwap · CosmWasm AMM" />
     </Screen>
   );
 }

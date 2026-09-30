@@ -22,10 +22,10 @@ export const colors = {
 export const radius = { sm: 8, md: 14, lg: 20, xl: 28, pill: 999 } as const;
 export const spacing = (n: number) => n * 4;
 export const fonts = {
-  display: 'SpaceGrotesk_600SemiBold',
-  displayBold: 'SpaceGrotesk_700Bold',
-  body: 'DMSans_400Regular',
-  bodyMedium: 'DMSans_500Medium',
-  bodySemi: 'DMSans_600SemiBold',
-  bodyBold: 'DMSans_700Bold',
+  display: 'Manrope_700Bold',
+  displayBold: 'Manrope_800ExtraBold',
+  body: 'Inter_400Regular',
+  bodyMedium: 'Inter_500Medium',
+  bodySemi: 'Inter_600SemiBold',
+  bodyBold: 'Inter_700Bold',
 } as const;
