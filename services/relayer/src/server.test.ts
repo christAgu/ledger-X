@@ -8,7 +8,7 @@ import type { RelayerConfig } from "./config.js";
 import type { CosmosRelayer } from "./cosmos.js";
 import { createRelayerServer } from "./server.js";
 
-describe("relayer configuration and REST proxy", () => {
+describe("relayer configuration, deposits, and REST proxy", () => {
   let relayerServer: Server | undefined;
   let upstreamServer: Server | undefined;
   let dataDir: string | undefined;
@@ -37,12 +37,14 @@ describe("relayer configuration and REST proxy", () => {
       chainApi: upstreamBase,
       chainId: "ledgerx-devnet-1",
       treasuryMnemonic: "",
-      webhookSecret: "",
-      sandbox: false,
+      webhookSecret: "test-secret",
+      sandbox: true,
       dataDir,
     };
     const chain = {
       treasuryAddress: async () => "ledgerx1s39200s6v4c96ml2xzuh389yxpd0guk29xkwk6",
+      depositReferenceUsed: async () => false,
+      mintEurc: async () => ({ txHash: "D".repeat(64), height: 42 }),
     } as unknown as CosmosRelayer;
     relayerServer = await createRelayerServer(config, chain);
     const relayerBase = await listen(relayerServer);
@@ -52,7 +54,8 @@ describe("relayer configuration and REST proxy", () => {
     await expect(configResponse.json()).resolves.toEqual({
       chainId: "ledgerx-devnet-1",
       treasuryAddress: "ledgerx1s39200s6v4c96ml2xzuh389yxpd0guk29xkwk6",
-      allowedDenoms: ["aXOF", "aEUR", "aUSD"],
+      denom: "ueurc",
+      xofPerEur: "655.957",
     });
 
     const restResponse = await fetch(
@@ -65,6 +68,35 @@ describe("relayer configuration and REST proxy", () => {
     expect(forwardedUrl).toBe(
       "/cosmos/bank/v1beta1/balances/test-address?pagination.limit=1",
     );
+
+    const depositResponse = await fetch(`${relayerBase}/v1/sandbox/deposit`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        address: "ledgerx1s39200s6v4c96ml2xzuh389yxpd0guk29xkwk6",
+        currency: "XOF",
+        amount: "5000",
+      }),
+    });
+    expect(depositResponse.status).toBe(200);
+    const deposit = await depositResponse.json();
+    expect(deposit).toMatchObject({
+      status: "minted",
+      txHash: "D".repeat(64),
+      height: 42,
+      credited: { denom: "ueurc", amount: "7622450" },
+    });
+
+    const invalidDepositResponse = await fetch(`${relayerBase}/v1/sandbox/deposit`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        address: "ledgerx1s39200s6v4c96ml2xzuh389yxpd0guk29xkwk6",
+        currency: "USD",
+        amount: "5",
+      }),
+    });
+    expect(invalidDepositResponse.status).toBe(400);
   });
 });
 

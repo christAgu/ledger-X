@@ -12,8 +12,7 @@ import {
   MINT_SYNTHETIC_TYPE_URL,
 } from "./messages.js";
 
-export const SYNTHETIC_DENOMS = ["aXOF", "aEUR", "aUSD"] as const;
-export type SyntheticDenom = (typeof SYNTHETIC_DENOMS)[number];
+export const EURC_DENOM = "ueurc";
 
 export interface BroadcastResult {
   txHash: string;
@@ -23,7 +22,7 @@ export interface BroadcastResult {
 export interface CashoutSend {
   sender: string;
   recipient: string;
-  denom: SyntheticDenom;
+  denom: typeof EURC_DENOM;
   amount: string;
 }
 
@@ -89,9 +88,8 @@ export class CosmosRelayer {
     ]);
   }
 
-  async mintSynthetic(
+  async mintEurc(
     recipient: string,
-    denom: SyntheticDenom,
     amount: string,
     depositRef: string,
   ): Promise<BroadcastResult> {
@@ -102,15 +100,14 @@ export class CosmosRelayer {
         value: {
           authority: address,
           recipient,
-          amount: { denom, amount },
+          amount: { denom: EURC_DENOM, amount },
           depositRef,
         },
       },
     ]);
   }
 
-  async burnSynthetic(
-    denom: SyntheticDenom,
+  async burnEurc(
     amount: string,
     cashoutRef: string,
   ): Promise<BroadcastResult> {
@@ -120,7 +117,7 @@ export class CosmosRelayer {
         typeUrl: BURN_SYNTHETIC_TYPE_URL,
         value: {
           authority: address,
-          amount: { denom, amount },
+          amount: { denom: EURC_DENOM, amount },
           cashoutRef,
         },
       },
@@ -144,7 +141,7 @@ export class CosmosRelayer {
       return undefined;
     }
     const coin = message.amount[0];
-    if (!coin || !isSyntheticDenom(coin.denom)) {
+    if (!coin || coin.denom !== EURC_DENOM) {
       return undefined;
     }
     return {
@@ -216,8 +213,4 @@ export class CosmosRelayer {
     }
     return { txHash: result.transactionHash, height: result.height };
   }
-}
-
-export function isSyntheticDenom(value: string): value is SyntheticDenom {
-  return SYNTHETIC_DENOMS.includes(value as SyntheticDenom);
 }

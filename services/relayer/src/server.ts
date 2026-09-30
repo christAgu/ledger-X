@@ -5,7 +5,8 @@ import { request as httpsRequest } from "node:https";
 import { fromBech32 } from "@cosmjs/encoding";
 import { majorToBaseUnits } from "./amount.js";
 import { RelayerConfig } from "./config.js";
-import { CosmosRelayer, isSyntheticDenom, SYNTHETIC_DENOMS } from "./cosmos.js";
+import { eurcBaseUnitsToXof, XOF_PER_EUR, xofToEurcBaseUnits } from "./fx.js";
+import { CosmosRelayer, EURC_DENOM } from "./cosmos.js";
 import { verifyWebhookSignature } from "./hmac.js";
 import { SerialQueue } from "./queue.js";
 import { TagStore } from "./tag-store.js";
@@ -15,13 +16,18 @@ const TAG_PATTERN = /^[a-z0-9_]{3,20}$/;
 interface DepositPayload {
   reference: string;
   address: string;
-  denom: string;
+  currency: "XOF" | "EUR";
   amount: string;
 }
 
 type DepositResult =
   | { status: "duplicate" }
-  | { status: "minted"; txHash: string; height: number };
+  | {
+      status: "minted";
+      txHash: string;
+      height: number;
+      credited: { denom: typeof EURC_DENOM; amount: string };
+    };
 
 class HttpError extends Error {
   constructor(
@@ -90,7 +96,8 @@ async function handleRequest(
     sendJson(response, 200, {
       chainId: config.chainId,
       treasuryAddress: await chain.treasuryAddress(),
-      allowedDenoms: SYNTHETIC_DENOMS,
+      denom: EURC_DENOM,
+      xofPerEur: XOF_PER_EUR,
     });
     return;
   }
@@ -212,7 +219,7 @@ async function handleRequest(
         JSON.stringify({
           reference: `sbx-${randomUUID()}`,
           address: requiredString(body, "address"),
-          denom: requiredString(body, "denom"),
+          currency: requiredString(body, "currency"),
           amount: requiredString(body, "amount"),
         }),
       );
@@ -265,8 +272,12 @@ async function handleRequest(
             "transaction must contain one successful MsgSend to the treasury",
           );
         }
-        const burn = await chain.burnSynthetic(send.denom, send.amount, txHash);
-        return { status: "burned" as const, burnTxHash: burn.txHash };
+        const burn = await chain.burnEurc(send.amount, txHash);
+        return {
+          status: "burned" as const,
+          burnTxHash: burn.txHash,
+          payout: { currency: "XOF" as const, amount: eurcBaseUnitsToXof(send.amount) },
+        };
       });
       sendJson(response, 200, result);
     } catch (error) {
@@ -285,19 +296,18 @@ async function processDeposit(
   chain: CosmosRelayer,
   queue: SerialQueue,
 ): Promise<DepositResult> {
-  const denom = payload.denom;
   if (!isLedgerxAddress(payload.address)) {
     throw new HttpError("address must be a valid ledgerx1 address");
-  }
-  if (!isSyntheticDenom(denom)) {
-    throw new HttpError("denom is not an allowed synthetic denom");
   }
   if (!payload.reference || payload.reference.length > 128) {
     throw new HttpError("reference must contain between 1 and 128 characters");
   }
   let baseAmount: string;
   try {
-    baseAmount = majorToBaseUnits(payload.amount);
+    baseAmount =
+      payload.currency === "XOF"
+        ? xofToEurcBaseUnits(payload.amount)
+        : majorToBaseUnits(payload.amount);
   } catch (error) {
     throw new HttpError(errorMessage(error));
   }
@@ -305,13 +315,13 @@ async function processDeposit(
     if (await chain.depositReferenceUsed(payload.reference)) {
       return { status: "duplicate" };
     }
-    const result = await chain.mintSynthetic(
-      payload.address,
-      denom,
-      baseAmount,
-      payload.reference,
-    );
-    return { status: "minted", txHash: result.txHash, height: result.height };
+    const result = await chain.mintEurc(payload.address, baseAmount, payload.reference);
+    return {
+      status: "minted",
+      txHash: result.txHash,
+      height: result.height,
+      credited: { denom: EURC_DENOM, amount: baseAmount },
+    };
   });
 }
 
@@ -344,10 +354,14 @@ function parseDepositPayload(raw: string): DepositPayload {
     throw new HttpError("request body must be a JSON object");
   }
   const body = parsed as Record<string, unknown>;
+  const currency = requiredString(body, "currency");
+  if (currency !== "XOF" && currency !== "EUR") {
+    throw new HttpError("currency must be XOF or EUR");
+  }
   return {
     reference: requiredString(body, "reference"),
     address: requiredString(body, "address"),
-    denom: requiredString(body, "denom"),
+    currency,
     amount: requiredString(body, "amount"),
   };
 }
