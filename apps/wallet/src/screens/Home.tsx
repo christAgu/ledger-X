@@ -7,6 +7,7 @@ import { useWalletStore } from '@/state/wallet';
 import { valueInXof } from '@/services/rates';
 import type { Denom } from '@/services/ledgerx/types';
 import { formatAmount, formatXof } from '@/utils/format';
+import { AnimatedGradientBackdrop } from '@/components/AnimatedGradient';
 import { AmountText, AssetRow, Card, EyeToggle, PressableScale, QuickAction, Screen, TextLabel } from '@/components/ui';
 
 const denoms: Denom[] = ['aXOF', 'aEUR', 'aUSD', 'USDC', 'USDT', 'BTC', 'SOL'];
@@ -22,6 +23,7 @@ export default function Home() {
   const displayTotal = displayCurrency === 'EUR' ? total / 655.957 : displayCurrency === 'USD' ? total / 600 : total;
   return (
     <Screen scroll gradient tabBarClearance style={styles.content}>
+      <AnimatedGradientBackdrop height={380} />
       <View style={styles.header}>
         <PressableScale onPress={() => router.push('/profile')} style={styles.profileButton}>
           <Image source={require('@/assets/brand/avatar-acxa-preview.png')} style={styles.avatar} />
@@ -105,15 +107,15 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   content: { paddingTop: spacing(1), gap: spacing(3) },
-  header: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), zIndex: 1 },
   profileButton: { borderWidth: 1, borderColor: colors.border, padding: 2, borderRadius: 24 },
   avatar: { width: 42, height: 42, borderRadius: 21 },
   topIcon: { width: 38, height: 38, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(14,34,70,.75)' },
-  balanceHero: { paddingTop: spacing(4), paddingBottom: spacing(4), gap: spacing(1) },
+  balanceHero: { paddingTop: spacing(4), paddingBottom: spacing(4), gap: spacing(1), zIndex: 1 },
   heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   gasBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 7, backgroundColor: 'rgba(61,220,151,.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill, marginTop: spacing(2) },
   gasDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success },
-  quickActions: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing(1) },
+  quickActions: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing(1), zIndex: 1 },
   promo: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing(3), gap: spacing(2) },
   promoIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   promoCopy: { flex: 1, gap: 3 },
