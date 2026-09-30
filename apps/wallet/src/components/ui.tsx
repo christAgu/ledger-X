@@ -187,8 +187,8 @@ export function AssetRow({ denom, balance, fiat, onPress, hidden = false, index 
 export function QuickAction({ label, icon: Icon, onPress, primary = false }: { label: string; icon: LucideIcon; onPress: () => void; primary?: boolean }) {
   return (
     <PressableScale onPress={onPress} style={styles.quickAction}>
-      <View style={[styles.quickCircle, primary && styles.quickPrimary]}><Icon size={21} color={primary ? colors.text : colors.accent} strokeWidth={2} /></View>
-      <TextLabel size={11} color={colors.textMuted} style={styles.quickLabel}>{label}</TextLabel>
+      <View style={[styles.quickCircle, primary && styles.quickPrimary]}><Icon size={21} color={colors.text} strokeWidth={2} /></View>
+      <TextLabel size={11} weight={fonts.bodySemi} color={colors.text} style={styles.quickLabel}>{label}</TextLabel>
     </PressableScale>
   );
 }
@@ -396,8 +396,8 @@ const styles = StyleSheet.create({
   assetName: { flex: 1, gap: 4 },
   assetAmount: { alignItems: 'flex-end', gap: 4 },
   quickAction: { alignItems: 'center', width: 66, gap: spacing(1.5) },
-  quickCircle: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primarySoft },
-  quickPrimary: { backgroundColor: colors.primary },
+  quickCircle: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgElevated, borderWidth: 1, borderColor: colors.border },
+  quickPrimary: { backgroundColor: colors.primary, borderColor: colors.primary },
   quickLabel: { textAlign: 'center', minHeight: 26 },
   segment: { flexDirection: 'row', padding: 4, backgroundColor: colors.bgElevated, borderRadius: radius.md, gap: 3 },
   segmentItem: { flex: 1, minHeight: 39, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, paddingHorizontal: 6 },
