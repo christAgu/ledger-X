@@ -13,11 +13,11 @@ accounts:
   mnemonic: cargo ramp supreme review change various throw air figure humble soft steel slam pole betray inhale already dentist enough away office apple sample glue
 - name: amina
   coins:
-  - 2500000000aXOF
+  - 500000000ueurc
   mnemonic: toe web embody inform keep great rookie return gospel clay beef cotton anger mandate glove equip below ranch tomato girl message garage enter blue
 - name: koffi
   coins:
-  - 500000000aXOF
+  - 100000000ueurc
   mnemonic: home canal satisfy ahead egg people tornado predict enlist later middle pistol young unhappy equip mesh quantum drip battle used culture position art way
 client:
   openapi:
@@ -42,42 +42,18 @@ genesis:
   app_state:
     bank:
       denom_metadata:
-      - description: Synthetic West African CFA franc
+      - description: Euro Coin (devnet stand-in for Circle EURC)
         denom_units:
-        - denom: aXOF
+        - denom: ueurc
           exponent: 0
           aliases: []
-        - denom: XOF
+        - denom: EURC
           exponent: 6
           aliases: []
-        base: aXOF
-        display: XOF
-        name: XOF
-        symbol: XOF
-      - description: Synthetic euro
-        denom_units:
-        - denom: aEUR
-          exponent: 0
-          aliases: []
-        - denom: EUR
-          exponent: 6
-          aliases: []
-        base: aEUR
-        display: EUR
-        name: EUR
-        symbol: EUR
-      - description: Synthetic US dollar
-        denom_units:
-        - denom: aUSD
-          exponent: 0
-          aliases: []
-        - denom: USD
-          exponent: 6
-          aliases: []
-        base: aUSD
-        display: USD
-        name: USD
-        symbol: USD
+        base: ueurc
+        display: EURC
+        name: EURC
+        symbol: EURC
     mint:
       params:
         mint_denom: uledx
@@ -88,6 +64,4 @@ genesis:
       params:
         treasury_address: ledgerx1s39200s6v4c96ml2xzuh389yxpd0guk29xkwk6
         allowed_denoms:
-        - aXOF
-        - aEUR
-        - aUSD
+        - ueurc

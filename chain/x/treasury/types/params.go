@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var defaultAllowedDenoms = []string{"aXOF", "aEUR", "aUSD"}
+var defaultAllowedDenoms = []string{"ueurc"}
 
 func NewParams(treasuryAddress string, allowedDenoms []string) Params {
 	return Params{

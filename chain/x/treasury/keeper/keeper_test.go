@@ -49,7 +49,7 @@ func initFixture(t *testing.T) *fixture {
 	authority := authtypes.NewModuleAddress(types.GovModuleName)
 
 	k := keeper.NewKeeper(storeService, encCfg.Codec, addressCodec, authority, bankKeeper)
-	params := types.NewParams(treasuryAddress, []string{"aXOF", "aEUR", "aUSD"})
+	params := types.NewParams(treasuryAddress, []string{"ueurc"})
 	if err := k.Params.Set(ctx, params); err != nil {
 		t.Fatalf("failed to set params: %v", err)
 	}
