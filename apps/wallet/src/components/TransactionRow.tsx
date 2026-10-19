@@ -152,7 +152,7 @@ export function TransactionRow({ item, onPress, index }: { item: WalletTransacti
 }
 
 const makeStyles = (colors: Palette) => StyleSheet.create({
-  tile: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: radius.lg, backgroundColor: colors.surface },
+  tile: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: radius.lg, backgroundColor: colors.listTile },
   middle: { flex: 1, minWidth: 0, gap: 4 },
   right: { alignItems: 'flex-end', gap: 5 },
   tabularAmount: { fontVariant: ['tabular-nums'] },

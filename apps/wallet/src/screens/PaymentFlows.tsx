@@ -341,7 +341,7 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   reviewLine: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing(2) },
   divider: { height: 1, backgroundColor: colors.border },
   center: { textAlign: 'center', marginBottom: spacing(3) },
-  destinationCard: { minHeight: 74, flexDirection: 'row', alignItems: 'center', gap: spacing(2), borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: spacing(3) },
+  destinationCard: { minHeight: 74, flexDirection: 'row', alignItems: 'center', gap: spacing(2), borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.outline, padding: spacing(3) },
   destinationActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   destinationIcon: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 21, backgroundColor: colors.primarySoft },
   chips: { flexDirection: 'row', gap: 8 },

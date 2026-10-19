@@ -263,7 +263,7 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   timelineDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1, borderColor: colors.border },
   timelineDone: { backgroundColor: colors.success, borderColor: colors.success },
-  hashBox: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), padding: spacing(3), borderRadius: radius.md, backgroundColor: colors.bg, borderColor: colors.border, borderWidth: 1 },
+  hashBox: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), padding: spacing(3), borderRadius: radius.md, backgroundColor: colors.surface, borderColor: colors.outline, borderWidth: 1 },
   hashText: { flex: 1, minWidth: 0, gap: 4 },
   feeNote: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: spacing(2), borderRadius: radius.md, backgroundColor: withAlpha(colors.success, 0.08) },
 });
