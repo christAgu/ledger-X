@@ -129,7 +129,7 @@ export function TransactionRow({ item, onPress, index }: { item: WalletTransacti
     <>
       <TransactionIcon item={item} />
       <View style={styles.middle}>
-        <TextLabel size={14} weight={fonts.bodySemi} numberOfLines={1}>{item.title}</TextLabel>
+        <TextLabel size={15} weight={fonts.bodySemi} numberOfLines={1}>{item.title}</TextLabel>
         <TextLabel size={12} color={colors.textDim} numberOfLines={1}>{time} · {item.detail}</TextLabel>
       </View>
       <View style={styles.right}>
@@ -152,7 +152,7 @@ export function TransactionRow({ item, onPress, index }: { item: WalletTransacti
 }
 
 const makeStyles = (colors: Palette) => StyleSheet.create({
-  tile: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: radius.lg, backgroundColor: colors.listTile },
+  tile: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 13, paddingHorizontal: 14, borderRadius: radius.lg, backgroundColor: colors.listTile },
   middle: { flex: 1, minWidth: 0, gap: 4 },
   right: { alignItems: 'flex-end', gap: 5 },
   tabularAmount: { fontVariant: ['tabular-nums'] },

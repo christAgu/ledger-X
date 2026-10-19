@@ -99,8 +99,9 @@ export function Button({ children, onPress, kind = 'primary', disabled = false, 
 }
 
 export function Card({ children, style }: PropsWithChildren<{ style?: StyleProp<ViewStyle> }>) {
+  const { mode } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  return <View style={[styles.card, style]}>{children}</View>;
+  return <View style={[styles.card, mode === 'light' && styles.cardShadow, style]}>{children}</View>;
 }
 
 export function Screen({
@@ -201,11 +202,11 @@ export function AssetRow({ denom, balance, fiat, onPress, hidden = false, index 
       <PressableScale onPress={onPress} style={styles.assetRow}>
         <AssetIcon denom={denom} />
         <View style={styles.assetName}>
-          <TextLabel size={14} weight={fonts.bodySemi}>{names[denom]}</TextLabel>
+          <TextLabel size={15} weight={fonts.bodySemi}>{names[denom]}</TextLabel>
           <TextLabel size={12} color={colors.textDim}>{denom} · Ledger X</TextLabel>
         </View>
         <View style={styles.assetAmount}>
-          <TextLabel size={14} weight={fonts.bodySemi}>{hidden ? '••••••' : formatAmount(balance, denom)}</TextLabel>
+          <TextLabel size={15} weight={fonts.bodySemi}>{hidden ? '••••••' : formatAmount(balance, denom)}</TextLabel>
           <TextLabel size={12} color={colors.textDim}>{hidden ? '••••' : fiat}</TextLabel>
         </View>
       </PressableScale>
@@ -219,7 +220,7 @@ export function QuickAction({ label, icon: Icon, onPress, primary = false }: { l
   return (
     <PressableScale onPress={onPress} style={styles.quickAction}>
       <View style={[styles.quickCircle, primary && styles.quickPrimary]}><Icon size={21} color={primary ? colors.onPrimary : colors.text} strokeWidth={2} /></View>
-      <TextLabel size={11} weight={fonts.bodySemi} color={primary && mode === 'dark' ? colors.onPrimary : colors.text} style={styles.quickLabel}>{label}</TextLabel>
+      <TextLabel size={12} weight={fonts.bodySemi} color={primary && mode === 'dark' ? colors.onPrimary : colors.text} style={styles.quickLabel}>{label}</TextLabel>
     </PressableScale>
   );
 }
@@ -444,6 +445,7 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   buttonGhost: { backgroundColor: 'transparent' },
   buttonDisabled: { opacity: 0.4 },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.outline, padding: spacing(4) },
+  cardShadow: { shadowColor: '#0E1B33', shadowOpacity: 0.06, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
   header: { height: 50, alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing(2) },
   headerRight: { alignItems: 'center', justifyContent: 'center' },
   iconButton: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
