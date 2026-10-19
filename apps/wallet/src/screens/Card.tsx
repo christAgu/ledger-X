@@ -181,7 +181,7 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   visaBack: { alignSelf: 'flex-end' },
   cardActions: { flexDirection: 'row', width: '100%', marginHorizontal: -spacing(4) },
   detailButton: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 5 },
-  actionIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgElevated, borderWidth: 1, borderColor: colors.border },
+  actionIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgElevated, borderWidth: 1, borderColor: colors.outline },
   actionIconActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   toastAboveTab: { bottom: 130 },
   limitCard: { gap: spacing(3) },

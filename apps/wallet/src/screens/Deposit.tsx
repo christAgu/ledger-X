@@ -153,7 +153,7 @@ function ReviewLine({ label, value, green = false, bold = false }: { label: stri
 
 const makeStyles = (colors: Palette) => StyleSheet.create({
   content: { paddingTop: spacing(1), gap: spacing(3) },
-  methodRow: { minHeight: 78, flexDirection: 'row', alignItems: 'center', gap: spacing(3), paddingHorizontal: spacing(3), borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  methodRow: { minHeight: 78, flexDirection: 'row', alignItems: 'center', gap: spacing(3), paddingHorizontal: spacing(3), borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.outline },
   methodDisabled: { opacity: colors.text === '#FFFFFF' ? 0.58 : 1, backgroundColor: colors.text === '#FFFFFF' ? colors.surface : colors.surfaceAlt },
   operatorIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFCC00' },
   moovIcon: { backgroundColor: '#0EA4E9' },
