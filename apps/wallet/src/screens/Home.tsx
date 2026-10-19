@@ -14,7 +14,7 @@ import { TransactionRow } from '@/components/TransactionRow';
 import { WalletCard } from '@/components/WalletCard';
 import { AmountText, AssetRow, Button, Card, EyeToggle, PressableScale, QuickAction, Screen, Sheet, TextLabel } from '@/components/ui';
 
-const denoms: Denom[] = ['EURC', 'USD', 'USDC', 'USDT', 'BTC', 'SOL'];
+const denoms: Denom[] = ['EURC', 'USDC', 'USDT'];
 
 export default function Home() {
   const { mode, colors } = useTheme();
