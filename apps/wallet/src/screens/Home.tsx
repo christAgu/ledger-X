@@ -58,7 +58,7 @@ export default function Home() {
 
       <View style={styles.balanceHero}>
         <View style={styles.heroTop}>
-          <TextLabel size={13} color={colors.textMuted}>Solde total estimé</TextLabel>
+          <TextLabel size={12} color={colors.textMuted} style={{ letterSpacing: 0.4, textTransform: 'uppercase' }}>Solde total estimé</TextLabel>
           <EyeToggle hidden={hideBalances} onPress={() => updateSettings({ hideBalances: !hideBalances })} />
         </View>
         {displayCurrency === 'XOF'
@@ -80,7 +80,7 @@ export default function Home() {
 
       <View style={styles.cardsSection}>
         <View style={styles.sectionHead}>
-          <TextLabel size={18} weight={fonts.display}>Mes cartes</TextLabel>
+          <TextLabel size={16} weight={fonts.display}>Mes cartes</TextLabel>
           <PressableScale onPress={() => setNewCardOpen(true)} style={styles.addCardButton}>
             <TextLabel size={12} weight={fonts.bodySemi} color={colors.accent}>+ Ajouter</TextLabel>
           </PressableScale>
@@ -126,7 +126,7 @@ export default function Home() {
       </PressableScale>
 
       <View style={styles.sectionHead}>
-        <TextLabel size={18} weight={fonts.display}>Mes actifs</TextLabel>
+        <TextLabel size={16} weight={fonts.display}>Mes actifs</TextLabel>
         <PressableScale onPress={() => router.push('/activity')}><TextLabel size={12} color={colors.accent}>Voir tout</TextLabel></PressableScale>
       </View>
       <Card style={styles.assetCard}>
@@ -144,7 +144,7 @@ export default function Home() {
       </Card>
 
       <View style={styles.sectionHead}>
-        <TextLabel size={18} weight={fonts.display}>Activité récente</TextLabel>
+        <TextLabel size={16} weight={fonts.display}>Activité récente</TextLabel>
         <PressableScale onPress={() => router.push('/activity')}><TextLabel size={12} color={colors.accent}>Tout voir</TextLabel></PressableScale>
       </View>
       <View style={styles.recentList}>
