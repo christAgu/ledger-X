@@ -148,7 +148,7 @@ export default function Home() {
         <PressableScale onPress={() => router.push('/activity')}><TextLabel size={12} color={colors.accent}>Tout voir</TextLabel></PressableScale>
       </View>
       <View style={styles.recentList}>
-        {transactions.slice(0, 3).map((transaction, index) => (
+        {transactions.filter((transaction) => transaction.type === 'card').slice(0, 4).map((transaction, index) => (
           <TransactionRow key={transaction.id} item={transaction} index={index} />
         ))}
       </View>
