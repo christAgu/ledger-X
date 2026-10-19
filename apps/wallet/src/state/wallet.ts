@@ -7,11 +7,15 @@ import type { Denom, SmartAccount } from '@/services/ledgerx/types';
 import { XOF_PER_EUR } from '@/services/rates';
 
 export type TransactionType = 'deposit' | 'send' | 'receive' | 'cashout' | 'convert' | 'card';
+export type MerchantBrand = 'netflix' | 'airbnb' | 'booking' | 'airfrance' | 'uber' | 'spotify' | 'orange' | 'shell';
+export type MerchantCategory = 'restaurant' | 'cafe' | 'shopping' | 'market' | 'pharmacy' | 'taxi' | 'fuel' | 'telecom' | 'travel';
+export type Merchant = MerchantBrand | MerchantCategory;
 export type WalletTransaction = {
   id: string;
   type: TransactionType;
   title: string;
   detail: string;
+  merchant?: Merchant;
   amount: number;
   denom: Denom;
   date: number;
@@ -66,12 +70,38 @@ const initialBalances: Record<Denom, number> = {
 
 const seedXofToEurc = (xof: number) => Math.round((xof / XOF_PER_EUR) * 100) / 100;
 
-const initialTransactions: WalletTransaction[] = [
-  { id: 'tx-1', type: 'deposit', title: 'Dépôt MTN MoMo', detail: 'MTN MoMo · +229 97 00 00 00 · 25 000 XOF', amount: seedXofToEurc(25_000), denom: 'EURC', date: Date.now() - 3_600_000, status: 'success', hash: '8a2f4c1d0e9b7a6f2d1c0b8e7a6f5d4c3b2a1908172635445566778899aabbcc', fee: 0 },
-  { id: 'tx-2', type: 'send', title: 'Envoyé à @fatou', detail: 'Transfert Ledger X · 12 500 XOF', amount: -seedXofToEurc(12_500), denom: 'EURC', date: Date.now() - 86_400_000, status: 'success', hash: '95b64c1d0e9b7a6f2d1c0b8e7a6f5d4c3b2a1908172635445566778899aabbcd', fee: 0 },
-  { id: 'tx-3', type: 'convert', title: 'Conversion XOF → EURC', detail: 'Taux garanti · frais 0,5 % · 10 000 XOF', amount: -seedXofToEurc(10_000), denom: 'EURC', date: Date.now() - 172_800_000, status: 'success', hash: '4c2f4c1d0e9b7a6f2d1c0b8e7a6f5d4c3b2a1908172635445566778899aabbce', fee: seedXofToEurc(50) },
-  { id: 'tx-4', type: 'card', title: 'Café Cotonou', detail: 'Paiement par carte · 4 500 XOF', amount: -seedXofToEurc(4_500), denom: 'EURC', date: Date.now() - 259_200_000, status: 'success', hash: '7e8d4c1d0e9b7a6f2d1c0b8e7a6f5d4c3b2a1908172635445566778899aabbcf', fee: 0 },
+const HOUR = 3_600_000;
+const DAY = 86_400_000;
+const seedHash = (index: number) => `${index.toString(16).padStart(4, '0')}4c1d0e9b7a6f2d1c0b8e7a6f5d4c3b2a1908172635445566778899aabbcc`.slice(0, 64);
+type Seed = Pick<WalletTransaction, 'type' | 'title' | 'detail'> & { xof: number; ago: number; merchant?: Merchant; fee?: number };
+const seeds: Seed[] = [
+  { type: 'deposit', title: 'Dépôt MTN MoMo', detail: 'MTN MoMo · +229 97 00 00 00 · 25 000 XOF', xof: 25_000, ago: HOUR },
+  { type: 'card', title: 'Netflix', detail: 'Abonnement · 5 490 XOF', xof: -5_490, ago: 3 * HOUR, merchant: 'netflix' },
+  { type: 'card', title: 'Maquis Chez Maman', detail: 'Restaurant · 6 500 XOF', xof: -6_500, ago: 7 * HOUR, merchant: 'restaurant' },
+  { type: 'send', title: 'Envoyé à @fatou', detail: 'Transfert Ledger X · 12 500 XOF', xof: -12_500, ago: DAY },
+  { type: 'card', title: 'Uber', detail: 'Course · 3 200 XOF', xof: -3_200, ago: DAY + 5 * HOUR, merchant: 'uber' },
+  { type: 'card', title: 'Marché Dantokpa', detail: 'Courses · 12 000 XOF', xof: -12_000, ago: DAY + 9 * HOUR, merchant: 'market' },
+  { type: 'convert', title: 'Conversion XOF → EURC', detail: 'Taux garanti · frais 0,5 % · 10 000 XOF', xof: -10_000, ago: 2 * DAY, fee: 50 },
+  { type: 'card', title: 'Airbnb', detail: 'Séjour à Grand-Popo · 85 000 XOF', xof: -85_000, ago: 2 * DAY + 4 * HOUR, merchant: 'airbnb' },
+  { type: 'card', title: 'Boutique Erevan', detail: 'Shopping · 28 000 XOF', xof: -28_000, ago: 2 * DAY + 8 * HOUR, merchant: 'shopping' },
+  { type: 'card', title: 'Café Cotonou', detail: 'Paiement par carte · 4 500 XOF', xof: -4_500, ago: 3 * DAY, merchant: 'cafe' },
+  { type: 'card', title: 'Spotify', detail: 'Abonnement · 3 500 XOF', xof: -3_500, ago: 3 * DAY + 6 * HOUR, merchant: 'spotify' },
+  { type: 'card', title: 'Pharmacie Camp Guézo', detail: 'Pharmacie · 7 800 XOF', xof: -7_800, ago: 4 * DAY, merchant: 'pharmacy' },
+  { type: 'card', title: 'Booking.com', detail: 'Hôtel Azalaï · 62 000 XOF', xof: -62_000, ago: 5 * DAY, merchant: 'booking' },
+  { type: 'card', title: 'Orange', detail: 'Recharge mobile · 2 000 XOF', xof: -2_000, ago: 5 * DAY + 3 * HOUR, merchant: 'orange' },
+  { type: 'card', title: 'Shell Ganhi', detail: 'Carburant · 15 000 XOF', xof: -15_000, ago: 6 * DAY, merchant: 'shell' },
+  { type: 'card', title: 'Air France', detail: 'Vol Cotonou → Paris · 385 000 XOF', xof: -385_000, ago: 12 * DAY, merchant: 'airfrance' },
 ];
+const initialTransactions: WalletTransaction[] = seeds.map(({ xof, ago, fee = 0, ...seed }, index) => ({
+  ...seed,
+  id: `tx-${index + 1}`,
+  amount: Math.sign(xof) * seedXofToEurc(Math.abs(xof)),
+  denom: 'EURC',
+  date: Date.now() - ago,
+  status: 'success',
+  hash: seedHash(index + 1),
+  fee: seedXofToEurc(fee),
+}));
 
 const startingState = {
   hydrated: false,
@@ -119,7 +149,7 @@ export const useWalletStore = create<WalletState>()(
     {
       name: 'ledgerx-wallet-state',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 3,
+      version: 4,
       migrate: (persisted, version) => {
         const state = persisted as WalletState;
         const settings = { ...startingState.settings, ...state.settings };
@@ -151,6 +181,11 @@ export const useWalletStore = create<WalletState>()(
             return transaction;
           });
           return { ...state, balances, transactions, settings };
+        }
+        if (version < 4) {
+          const existing = new Set((state.transactions ?? []).map((transaction) => transaction.id));
+          const transactions = [...(state.transactions ?? []), ...initialTransactions.filter((seed) => !existing.has(seed.id))];
+          return { ...state, transactions, settings };
         }
         return { ...state, settings };
       },

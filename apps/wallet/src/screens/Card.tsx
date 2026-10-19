@@ -10,14 +10,23 @@ import { fonts, radius, spacing, type Palette } from '@/theme/tokens';
 import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { useWalletStore, verifyPin } from '@/state/wallet';
 import { Button, Card as Surface, Header, PinPad, PressableScale, Screen, Sheet, TextLabel, Toast } from '@/components/ui';
+import { TransactionIcon } from '@/components/TransactionRow';
+import { formatAmount } from '@/utils/format';
 
 const limits = [100_000, 250_000, 500_000, 1_000_000];
+
+function relativeDay(date: number): string {
+  const days = Math.floor((Date.now() - date) / 86_400_000);
+  const time = new Date(date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  return `${days === 0 ? 'Aujourd’hui' : days === 1 ? 'Hier' : new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} · ${time}`;
+}
 
 export default function CardScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const card = useWalletStore((state) => state.card);
   const updateCard = useWalletStore((state) => state.updateCard);
+  const cardPayments = useWalletStore((state) => state.transactions).filter((item) => item.type === 'card').slice(0, 4);
   const [revealed, setRevealed] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
@@ -117,11 +126,8 @@ export default function CardScreen() {
 
       <Button kind="secondary" onPress={() => setReplaceOpen(true)}>Remplacer la carte</Button>
       <View style={styles.sectionHead}><TextLabel size={18} weight={fonts.display}>Paiements récents</TextLabel></View>
-      {[
-        ['Café Cotonou', 'Aujourd’hui · 11:32', '−4 500 XOF'],
-        ['Uber BV', 'Hier · 19:08', '−8 200 XOF'],
-      ].map(([title, subtitle, amount]) => (
-        <View key={title} style={styles.purchaseRow}><View style={styles.purchaseIcon}><CreditCard size={17} color={colors.accent} /></View><View style={{ flex: 1, gap: 3 }}><TextLabel size={13} weight={fonts.bodySemi}>{title}</TextLabel><TextLabel size={11} color={colors.textDim}>{subtitle}</TextLabel></View><TextLabel size={13} weight={fonts.bodySemi}>{amount}</TextLabel></View>
+      {cardPayments.map((item) => (
+        <View key={item.id} style={styles.purchaseRow}><TransactionIcon item={item} size={38} /><View style={{ flex: 1, gap: 3 }}><TextLabel size={13} weight={fonts.bodySemi}>{item.title}</TextLabel><TextLabel size={11} color={colors.textDim}>{relativeDay(item.date)} · {item.detail}</TextLabel></View><TextLabel size={13} weight={fonts.bodySemi}>−{formatAmount(Math.abs(item.amount), item.denom)}</TextLabel></View>
       ))}
       <Sheet visible={pinOpen} title="Confirmez avec votre code" onClose={() => setPinOpen(false)}>
         <TextLabel size={13} color={colors.textMuted} style={styles.center}>Saisissez votre code secret pour afficher la carte.</TextLabel>
@@ -187,6 +193,5 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   limitChipActive: { backgroundColor: colors.primary },
   sectionHead: { marginTop: spacing(1) },
   purchaseRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), paddingVertical: spacing(2), borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
-  purchaseIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' },
   center: { textAlign: 'center', marginBottom: spacing(3) },
 });
