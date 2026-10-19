@@ -121,7 +121,7 @@ const startingState = {
     expiry: '08/29',
     holder: 'AMINA TRAORÉ',
   },
-  settings: { biometricsEnabled: false, hideBalances: false, displayCurrency: 'EUR' as const, themeMode: 'dark' as const },
+  settings: { biometricsEnabled: false, hideBalances: false, displayCurrency: 'EUR' as const, themeMode: 'light' as const },
   onboarded: false,
 };
 
@@ -149,12 +149,13 @@ export const useWalletStore = create<WalletState>()(
     {
       name: 'ledgerx-wallet-state',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 4,
+      version: 5,
       migrate: (persisted, version) => {
         const state = persisted as WalletState;
         const settings = { ...startingState.settings, ...state.settings };
         if (version < 1) settings.displayCurrency = 'EUR';
         if (version < 2) settings.themeMode = 'dark';
+        if (version < 5) settings.themeMode = 'light';
         if (version < 3) {
           const oldBalances = (state.balances ?? {}) as Record<string, number>;
           const balances: Record<Denom, number> = {

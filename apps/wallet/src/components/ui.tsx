@@ -121,9 +121,9 @@ export function Screen({
   );
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      {gradient ? (
+      {gradient && mode === 'dark' ? (
         <LinearGradient
-          colors={mode === 'light' ? ['#E6EEFF', '#F0F4FC', colors.bg] : ['#0F2E63', '#081C3C', colors.bg]}
+          colors={['#0F2E63', '#081C3C', colors.bg]}
           locations={[0, 0.55, 1]}
           style={StyleSheet.absoluteFill}
         />
@@ -248,11 +248,12 @@ export function Sheet({ visible, title, onClose, children }: PropsWithChildren<{
 }
 
 export function Toast({ message, visible, style }: { message: string; visible: boolean; style?: StyleProp<ViewStyle> }) {
+  const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
   if (!visible) return null;
   return (
     <Animated.View entering={FadeInUp.duration(180)} style={[styles.toast, style]}>
-      <TextLabel size={13} weight={fonts.bodySemi}>{message}</TextLabel>
+      <TextLabel size={13} weight={fonts.bodySemi} color={colors.paper}>{message}</TextLabel>
     </Animated.View>
   );
 }
@@ -423,14 +424,14 @@ export function EyeToggle({ hidden, onPress }: { hidden: boolean; onPress: () =>
 
 const makeStyles = (colors: Palette) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  screenContent: { paddingHorizontal: spacing(5), paddingTop: spacing(3), paddingBottom: spacing(7), gap: spacing(4) },
+  screenContent: { paddingHorizontal: spacing(5), paddingTop: spacing(3), paddingBottom: spacing(7), gap: spacing(5) },
   flexContent: { flex: 1 },
-  button: { height: 54, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing(4) },
+  button: { height: 54, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing(5) },
   buttonPrimary: { backgroundColor: colors.primary },
-  buttonSecondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  buttonSecondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.outline },
   buttonGhost: { backgroundColor: 'transparent' },
   buttonDisabled: { opacity: 0.4 },
-  card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing(4) },
+  card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.outline, padding: spacing(4) },
   header: { height: 50, alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing(2) },
   headerRight: { alignItems: 'center', justifyContent: 'center' },
   iconButton: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
@@ -439,17 +440,17 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   assetName: { flex: 1, gap: 4 },
   assetAmount: { alignItems: 'flex-end', gap: 4 },
   quickAction: { alignItems: 'center', width: 66, gap: spacing(1.5) },
-  quickCircle: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgElevated, borderWidth: 1, borderColor: colors.border },
+  quickCircle: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.outline },
   quickPrimary: { backgroundColor: colors.primary, borderColor: colors.primary },
   quickLabel: { textAlign: 'center', minHeight: 26 },
-  segment: { flexDirection: 'row', padding: 4, backgroundColor: colors.segmentTrack, borderRadius: radius.md, gap: 3 },
-  segmentItem: { flex: 1, minHeight: 39, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, paddingHorizontal: 6 },
-  segmentSelected: { backgroundColor: colors.surface },
+  segment: { flexDirection: 'row', padding: 4, backgroundColor: colors.segmentTrack, borderRadius: radius.pill, gap: 3 },
+  segmentItem: { flex: 1, minHeight: 39, alignItems: 'center', justifyContent: 'center', borderRadius: radius.pill, paddingHorizontal: 6 },
+  segmentSelected: { backgroundColor: colors.bgElevated },
   sheetBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.overlay },
-  sheet: { backgroundColor: colors.bgElevated, paddingHorizontal: spacing(5), paddingTop: spacing(2), paddingBottom: spacing(7), borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, borderColor: colors.border, borderWidth: 1, maxHeight: '86%' },
+  sheet: { backgroundColor: colors.bgElevated, paddingHorizontal: spacing(5), paddingTop: spacing(2), paddingBottom: spacing(7), borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, borderColor: colors.outline, borderWidth: 1, maxHeight: '86%' },
   sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: spacing(4) },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing(4) },
-  toast: { position: 'absolute', left: 28, right: 28, bottom: 38, backgroundColor: colors.surfaceAlt, borderColor: colors.border, borderWidth: 1, borderRadius: radius.md, padding: spacing(3), alignItems: 'center', zIndex: 50 },
+  toast: { position: 'absolute', left: 28, right: 28, bottom: 38, backgroundColor: colors.ink, borderRadius: radius.pill, padding: spacing(3), alignItems: 'center', zIndex: 50 },
   pinWrap: { alignItems: 'center', width: '100%', gap: spacing(5) },
   pinDots: { flexDirection: 'row', gap: spacing(3), marginTop: spacing(3) },
   pinDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.surfaceAlt, borderColor: colors.border, borderWidth: 1 },
@@ -475,7 +476,7 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   switchKnob: { width: 22, height: 22, backgroundColor: colors.textMuted, borderRadius: 11 },
   switchKnobActive: { alignSelf: 'flex-end', backgroundColor: colors.onPrimary },
   copyButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
-  inputWrap: { minHeight: 54, paddingHorizontal: spacing(3), borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
+  inputWrap: { minHeight: 56, paddingHorizontal: spacing(4), borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.bgElevated, flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
   inputWrapFocused: { borderColor: colors.primary },
   input: { color: colors.text, fontFamily: fonts.body, fontSize: 16, flex: 1, paddingVertical: spacing(2) },
   inputWeb: { outlineWidth: 0 },
