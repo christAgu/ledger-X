@@ -14,10 +14,10 @@ import { TransactionRow } from '@/components/TransactionRow';
 import { WalletCard } from '@/components/WalletCard';
 import { AmountText, AssetRow, Button, Card, EyeToggle, PressableScale, QuickAction, Screen, Sheet, TextLabel } from '@/components/ui';
 
-const denoms: Denom[] = ['EURC', 'USD', 'USDC', 'USDT', 'BTC', 'SOL'];
+const denoms: Denom[] = ['EURC', 'USDC', 'USDT'];
 
 export default function Home() {
-  const { mode, colors } = useTheme();
+  const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [newCardOpen, setNewCardOpen] = useState(false);
   const { width: screenWidth } = useWindowDimensions();
@@ -43,7 +43,7 @@ export default function Home() {
   }, [accountAddress, syncBalances]));
   return (
     <Screen scroll gradient tabBarClearance style={styles.content}>
-      {mode === 'dark' ? <AnimatedGradientBackdrop height={380} /> : null}
+      <AnimatedGradientBackdrop height={380} />
       <View style={styles.header}>
         <PressableScale onPress={() => router.push('/profile')} style={styles.profileButton}>
           <Image source={require('@/assets/brand/avatar-acxa-preview.png')} style={styles.avatar} />

@@ -2,6 +2,7 @@ import type { PropsWithChildren, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -9,6 +10,7 @@ import {
   Text,
   TextInput,
   View,
+  type ImageSourcePropType,
   type TextProps,
   type PressableProps,
   type StyleProp,
@@ -170,12 +172,22 @@ const assetColor: Record<Denom, string> = {
 const assetIconText: Record<Denom, string> = {
   EURC: '€', USD: '$', USDC: '◉', USDT: '₮', BTC: '₿', SOL: '◎',
 };
+const assetLogo: Partial<Record<Denom, ImageSourcePropType>> = {
+  EURC: require('@/assets/tokens/eurc.png'),
+  USDC: require('@/assets/tokens/usdc.png'),
+  USDT: require('@/assets/tokens/usdt.png'),
+};
 
 export function AssetIcon({ denom, size = 42 }: { denom: Denom; size?: number }) {
   const styles = useThemedStyles(makeStyles);
+  const logo = assetLogo[denom];
   return (
-    <View style={[styles.assetIcon, { width: size, height: size, borderRadius: size / 2, backgroundColor: assetColor[denom] }]}>
-      <TextLabel size={size * 0.48} weight={fonts.displayBold}>{assetIconText[denom]}</TextLabel>
+    <View style={[styles.assetIcon, { width: size, height: size, borderRadius: size / 2, backgroundColor: assetColor[denom], overflow: 'hidden' }]}>
+      {logo ? (
+        <Image source={logo} style={{ width: size, height: size }} />
+      ) : (
+        <TextLabel size={size * 0.48} weight={fonts.displayBold}>{assetIconText[denom]}</TextLabel>
+      )}
     </View>
   );
 }
