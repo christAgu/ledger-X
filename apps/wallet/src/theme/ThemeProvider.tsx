@@ -3,7 +3,7 @@ import { useWalletStore } from '@/state/wallet';
 import { darkColors, lightColors, type Palette } from './tokens';
 
 export function useTheme(): { mode: 'dark' | 'light'; colors: Palette } {
-  const mode = useWalletStore((state) => state.settings.themeMode ?? 'dark');
+  const mode = useWalletStore((state) => state.settings.themeMode ?? 'light');
   return { mode, colors: mode === 'light' ? lightColors : darkColors };
 }
 

@@ -158,7 +158,7 @@ function ProfileLink({ icon: Icon, title, subtitle, onPress }: { icon: Component
 const makeStyles = (colors: Palette) => StyleSheet.create({
   content: { paddingTop: spacing(1), gap: spacing(2) },
   profileHero: { alignItems: 'center', gap: spacing(1.5), paddingVertical: spacing(3) },
-  avatarRing: { padding: 3, borderWidth: 1, borderColor: colors.border, borderRadius: 38 },
+  avatarRing: { padding: 3, borderWidth: 1, borderColor: colors.outline, borderRadius: 38 },
   avatar: { width: 66, height: 66, borderRadius: 33 },
   address: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill, backgroundColor: colors.surface },
   qrLink: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 4 },

@@ -10,7 +10,7 @@ import { formatAmount, formatXof } from '@/utils/format';
 import { fonts, radius, spacing, type Palette, withAlpha } from '@/theme/tokens';
 import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { Card, Header, PressableScale, Screen, Sheet, TextLabel, Toast } from '@/components/ui';
-import { getTransactionAppearance, TransactionRow, TransactionStatusPill } from '@/components/TransactionRow';
+import { TransactionIcon, TransactionRow, TransactionStatusPill } from '@/components/TransactionRow';
 
 const filters = ['Tout', 'Dépôts', 'Envois', 'Reçus', 'Retraits', 'Conversions', 'Carte'];
 const filterTypes: Record<string, TransactionType | null> = {
@@ -152,12 +152,11 @@ function ChartBar({ label, amount, maxAmount, today, index }: { label: string; a
 function TransactionDetails({ item, onCopy }: { item: WalletTransaction; onCopy: () => void }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const { icon: Icon, tint, background } = getTransactionAppearance(item.type, colors);
   const incoming = item.amount > 0;
   const time = new Date(item.date).toLocaleString('fr-FR');
   return (
     <View style={styles.detailContent}>
-      <View style={[styles.detailIcon, { backgroundColor: background }]}><Icon size={24} color={tint} /></View>
+      <View style={styles.detailIcon}><TransactionIcon item={item} size={60} /></View>
       <TextLabel size={18} weight={fonts.bodySemi} style={styles.center}>{item.title}</TextLabel>
       <TextLabel size={28} weight={fonts.displayBold} color={incoming ? colors.success : colors.text} style={styles.center}>
         {incoming ? '+' : '−'}{formatAmount(Math.abs(item.amount), item.denom)}
@@ -255,7 +254,7 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   groupHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   transactionList: { gap: 8 },
   detailContent: { alignItems: 'stretch', gap: spacing(2) },
-  detailIcon: { width: 56, height: 56, borderRadius: 18, alignSelf: 'center', alignItems: 'center', justifyContent: 'center' },
+  detailIcon: { alignSelf: 'center' },
   statusCentered: { alignSelf: 'center' },
   detailCard: { paddingVertical: spacing(1), paddingHorizontal: spacing(3), gap: spacing(2) },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing(2) },
@@ -264,7 +263,7 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   timelineDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1, borderColor: colors.border },
   timelineDone: { backgroundColor: colors.success, borderColor: colors.success },
-  hashBox: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), padding: spacing(3), borderRadius: radius.md, backgroundColor: colors.bg, borderColor: colors.border, borderWidth: 1 },
+  hashBox: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), padding: spacing(3), borderRadius: radius.md, backgroundColor: colors.surface, borderColor: colors.outline, borderWidth: 1 },
   hashText: { flex: 1, minWidth: 0, gap: 4 },
   feeNote: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: spacing(2), borderRadius: radius.md, backgroundColor: withAlpha(colors.success, 0.08) },
 });

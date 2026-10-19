@@ -20,11 +20,12 @@ type SmokeBlobConfig = {
 };
 
 const smokeBlobs: SmokeBlobConfig[] = [
-  { size: 300, color: '#2458ED', opacity: 0.27, duration: 10000, left: -40, top: -42, ampX: 70, ampY: 35, phase: 0.02, phase2: 0.12 },
-  { size: 360, color: '#3A6BFF', opacity: 0.24, duration: 13000, left: 38, top: -110, ampX: 95, ampY: 50, phase: 0.23, phase2: 0.46 },
-  { size: 420, color: '#8AB4FF', opacity: 0.22, duration: 15000, left: 104, top: -26, ampX: 110, ampY: 58, phase: 0.47, phase2: 0.72 },
-  { size: 280, color: '#1B3FB8', opacity: 0.38, duration: 17000, left: -55, top: 92, ampX: 60, ampY: 30, phase: 0.68, phase2: 0.91 },
-  { size: 240, color: '#2458ED', opacity: 0.3, duration: 20000, left: 170, top: 90, ampX: 82, ampY: 42, phase: 0.84, phase2: 0.32 },
+  { size: 300, color: '#2458ED', opacity: 0.34, duration: 8000, left: -40, top: -42, ampX: 85, ampY: 45, phase: 0.02, phase2: 0.12 },
+  { size: 360, color: '#3A6BFF', opacity: 0.3, duration: 10500, left: 38, top: -110, ampX: 115, ampY: 62, phase: 0.23, phase2: 0.46 },
+  { size: 420, color: '#8AB4FF', opacity: 0.28, duration: 12000, left: 104, top: -26, ampX: 135, ampY: 72, phase: 0.47, phase2: 0.72 },
+  { size: 280, color: '#1B3FB8', opacity: 0.46, duration: 14000, left: -55, top: 92, ampX: 75, ampY: 40, phase: 0.68, phase2: 0.91 },
+  { size: 240, color: '#2458ED', opacity: 0.38, duration: 16000, left: 170, top: 90, ampX: 100, ampY: 55, phase: 0.84, phase2: 0.32 },
+  { size: 200, color: '#9FC4FF', opacity: 0.32, duration: 9000, left: 60, top: 30, ampX: 90, ampY: 48, phase: 0.55, phase2: 0.05 },
 ];
 
 function SmokeBlob({ color, duration, left, opacity, phase, phase2, size, top, ampX, ampY }: SmokeBlobConfig) {
@@ -42,12 +43,12 @@ function SmokeBlob({ color, duration, left, opacity, phase, phase2, size, top, a
   const animatedStyle = useAnimatedStyle(() => {
     const angle = 2 * Math.PI * (progress.value + phase);
     const morphAngle = 2 * Math.PI * (progress.value + phase2);
-    const scaleX = 1 + 0.18 * Math.sin(morphAngle);
+    const scaleX = 1 + 0.3 * Math.sin(morphAngle);
     return {
       transform: [
         { translateX: Math.sin(angle) * ampX },
         { translateY: Math.cos(angle) * ampY },
-        { rotate: `${Math.sin(morphAngle) * 15}deg` },
+        { rotate: `${Math.sin(morphAngle) * 24}deg` },
         { scaleX },
         { scaleY: 1 / scaleX },
       ],
@@ -77,18 +78,18 @@ export function AnimatedGradientBackdrop({ height }: { height: number }) {
 
   useEffect(() => {
     if (reducedMotion) return;
-    shade.value = withRepeat(withTiming(1, { duration: 12000, easing: Easing.inOut(Easing.sin) }), -1, true);
+    shade.value = withRepeat(withTiming(1, { duration: 8000, easing: Easing.inOut(Easing.sin) }), -1, true);
     return () => cancelAnimation(shade);
   }, [reducedMotion, shade]);
 
-  const layerAStyle = useAnimatedStyle(() => ({ opacity: mode === 'light' ? 0.6 : 0.6 - shade.value * 0.4 }), [mode]);
+  const layerAStyle = useAnimatedStyle(() => ({ opacity: mode === 'light' ? 0.9 : 0.85 - shade.value * 0.55 }), [mode]);
   const lightOverlayStyle = useAnimatedStyle(() => ({ opacity: 1 - shade.value }));
-  const darkOverlayStyle = useAnimatedStyle(() => ({ opacity: mode === 'light' ? 0 : shade.value * 0.45 }), [mode]);
+  const darkOverlayStyle = useAnimatedStyle(() => ({ opacity: mode === 'light' ? 0 : shade.value * 0.55 }), [mode]);
   const layerAColors: readonly [string, string, string] = mode === 'light'
-    ? ['#DCE7FF', '#EEF3FF', 'rgba(244,246,251,0)']
+    ? ['#C9DCFF', '#DEEAFF', 'rgba(255,255,255,0)']
     : ['#2458ED', '#12306E', 'rgba(7,22,50,0)'];
   const layerBColors: readonly [string, string, string] = mode === 'light'
-    ? ['#DCE7FF', '#EEF3FF', 'rgba(244,246,251,0)']
+    ? ['#AFCBFF', '#D0E0FF', 'rgba(255,255,255,0)']
     : ['#0B2A7A', '#3A6BFF', 'rgba(7,22,50,0)'];
 
   return (
@@ -103,7 +104,7 @@ export function AnimatedGradientBackdrop({ height }: { height: number }) {
       <View style={[StyleSheet.absoluteFill, styles.layerB]}>
         <LinearGradient colors={layerBColors} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
       </View>
-      {smokeBlobs.map((blob, index) => <SmokeBlob key={`smoke-${index}`} {...blob} opacity={blob.opacity * (mode === 'light' ? 0.8 : 1)} />)}
+      {smokeBlobs.map((blob, index) => <SmokeBlob key={`smoke-${index}`} {...blob} opacity={blob.opacity * (mode === 'light' ? 0.95 : 1)} />)}
       <Animated.View style={[StyleSheet.absoluteFill, styles.lightOverlay, lightOverlayStyle]}>
         <LinearGradient
           colors={mode === 'light' ? ['rgba(255,255,255,0.35)', 'rgba(255,255,255,0)'] : ['rgba(138,180,255,0.18)', 'rgba(138,180,255,0)']}
@@ -122,7 +123,7 @@ export function AnimatedGradientBackdrop({ height }: { height: number }) {
 const makeStyles = (_colors: Palette) => StyleSheet.create({
   container: { position: 'absolute', top: 0, left: 0, right: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' },
   blob: { position: 'absolute' },
-  layerB: { opacity: 0.3 },
+  layerB: { opacity: 0.45 },
   lightOverlay: { opacity: 1 },
   darkOverlay: { backgroundColor: '#030A1C' },
   dim: { backgroundColor: '#030A1C', opacity: 0.22 },

@@ -21,6 +21,8 @@ export type Palette = {
   overlay: string;
   heroFade: string;
   segmentTrack: string;
+  outline: string;
+  listTile: string;
 };
 
 export const darkColors: Palette = {
@@ -46,34 +48,38 @@ export const darkColors: Palette = {
   overlay: 'rgba(3,10,28,0.72)',
   heroFade: '#0A2147',
   segmentTrack: '#071632',
+  outline: '#29426A',
+  listTile: '#0E2246',
 };
 
 export const lightColors: Palette = {
-  bg: '#F4F6FB',
+  bg: '#FFFFFF',
   bgElevated: '#FFFFFF',
-  surface: '#FFFFFF',
-  surfaceAlt: '#EEF2FA',
-  border: '#E0E5EF',
+  surface: '#F2F5F9',
+  surfaceAlt: '#E8EDF4',
+  border: '#E9EDF3',
   primary: '#2458ED',
   primaryPressed: '#1F4BD0',
   primarySoft: 'rgba(36,88,237,0.10)',
   accent: '#2458ED',
   glow: '#9FC4FF',
-  text: '#101D38',
-  textMuted: '#59647A',
-  textDim: '#7A859B',
+  text: '#0E1B33',
+  textMuted: '#55607A',
+  textDim: '#8B94A8',
   success: '#0FA968',
   danger: '#E5405E',
   warning: '#D98A0B',
-  paper: '#F7F8FB',
-  ink: '#101D38',
+  paper: '#FFFFFF',
+  ink: '#0E1B33',
   onPrimary: '#FFFFFF',
-  overlay: 'rgba(16,29,56,0.45)',
-  heroFade: '#F4F6FB',
-  segmentTrack: '#E6EBF5',
+  overlay: 'rgba(14,27,51,0.40)',
+  heroFade: '#FFFFFF',
+  segmentTrack: '#EEF1F6',
+  outline: 'transparent',
+  listTile: 'transparent',
 };
 
-export const radius = { sm: 8, md: 14, lg: 20, xl: 28, pill: 999 } as const;
+export const radius = { sm: 10, md: 16, lg: 24, xl: 32, pill: 999 } as const;
 export const spacing = (n: number) => n * 4;
 export const fonts = {
   display: 'Manrope_700Bold',

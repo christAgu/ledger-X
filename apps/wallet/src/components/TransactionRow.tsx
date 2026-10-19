@@ -1,7 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 import Animated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
 import { ArrowDownToLine, ArrowLeftRight, ArrowUpRight, CreditCard, QrCode, type LucideIcon } from 'lucide-react-native';
-import type { TransactionType, WalletTransaction } from '@/state/wallet';
+import type { Merchant, MerchantBrand, MerchantCategory, TransactionType, WalletTransaction } from '@/state/wallet';
 import { fonts, radius, type Palette, withAlpha } from '@/theme/tokens';
 import { useTheme, useThemedStyles } from '@/theme/ThemeProvider';
 import { formatAmount } from '@/utils/format';
@@ -29,6 +29,82 @@ export function getTransactionAppearance(type: TransactionType, colors: Palette)
   return { icon: icons[type], ...tones[type] };
 }
 
+const brandLogos: Record<MerchantBrand, ImageSourcePropType> = {
+  netflix: require('../../assets/merchants/netflix.png'),
+  airbnb: require('../../assets/merchants/airbnb.png'),
+  booking: require('../../assets/merchants/booking.png'),
+  airfrance: require('../../assets/merchants/airfrance.png'),
+  uber: require('../../assets/merchants/uber.png'),
+  spotify: require('../../assets/merchants/spotify.png'),
+  orange: require('../../assets/merchants/orange.png'),
+  shell: require('../../assets/merchants/shell.png'),
+};
+
+const categoryIcons: Record<MerchantCategory, { emoji: string; tint: string }> = {
+  restaurant: { emoji: '🍍', tint: '#F4B942' },
+  cafe: { emoji: '☕', tint: '#C98A5B' },
+  shopping: { emoji: '🛍️', tint: '#E86FA4' },
+  market: { emoji: '🥭', tint: '#F08A3C' },
+  pharmacy: { emoji: '💊', tint: '#4FC3A1' },
+  taxi: { emoji: '🚕', tint: '#F5C84B' },
+  fuel: { emoji: '⛽', tint: '#7FA7FF' },
+  telecom: { emoji: '📱', tint: '#8AB4FF' },
+  travel: { emoji: '✈️', tint: '#6FB7FF' },
+};
+
+const titleMatchers: [RegExp, Merchant][] = [
+  [/netflix/i, 'netflix'],
+  [/airbnb/i, 'airbnb'],
+  [/booking/i, 'booking'],
+  [/air ?france/i, 'airfrance'],
+  [/uber/i, 'uber'],
+  [/spotify/i, 'spotify'],
+  [/orange/i, 'orange'],
+  [/shell/i, 'shell'],
+  [/caf[ée]|coffee/i, 'cafe'],
+  [/maquis|restau|resto|grill|chez /i, 'restaurant'],
+  [/march[ée]|épicerie|epicerie/i, 'market'],
+  [/pharma/i, 'pharmacy'],
+  [/taxi|zem|vtc/i, 'taxi'],
+  [/station|total|carburant/i, 'fuel'],
+  [/mtn|moov|celtiis|recharge mobile/i, 'telecom'],
+  [/boutique|shop|store/i, 'shopping'],
+  [/vol |hôtel|hotel|voyage/i, 'travel'],
+];
+
+export function merchantFor(item: Pick<WalletTransaction, 'type' | 'title' | 'merchant'>): Merchant | null {
+  if (item.merchant) return item.merchant;
+  if (item.type !== 'card') return null;
+  return titleMatchers.find(([pattern]) => pattern.test(item.title))?.[1] ?? null;
+}
+
+function isBrand(merchant: Merchant): merchant is MerchantBrand {
+  return merchant in brandLogos;
+}
+
+export function TransactionIcon({ item, size = 44 }: { item: WalletTransaction; size?: number }) {
+  const { colors } = useTheme();
+  const merchant = merchantFor(item);
+  const shape = { width: size, height: size, borderRadius: size / 2 };
+  if (merchant && isBrand(merchant)) {
+    return <Image source={brandLogos[merchant]} style={[shape, { borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border }]} accessibilityIgnoresInvertColors />;
+  }
+  if (merchant) {
+    const { emoji, tint } = categoryIcons[merchant];
+    return (
+      <View style={[shape, { backgroundColor: withAlpha(tint, 0.18), alignItems: 'center', justifyContent: 'center' }]}>
+        <Text style={{ fontSize: size * 0.46, lineHeight: size * 0.62 }}>{emoji}</Text>
+      </View>
+    );
+  }
+  const { icon: Icon, tint, background } = getTransactionAppearance(item.type, colors);
+  return (
+    <View style={[shape, { backgroundColor: background, alignItems: 'center', justifyContent: 'center' }]}>
+      <Icon size={Math.round(size * 0.45)} color={tint} />
+    </View>
+  );
+}
+
 export function TransactionStatusPill({ status, successLabel = 'Terminé' }: { status: WalletTransaction['status']; successLabel?: string }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -47,12 +123,11 @@ export function TransactionStatusPill({ status, successLabel = 'Terminé' }: { s
 export function TransactionRow({ item, onPress, index }: { item: WalletTransaction; onPress?: () => void; index?: number }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const { icon: Icon, tint, background } = getTransactionAppearance(item.type, colors);
   const incoming = item.amount > 0;
   const time = new Date(item.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   const content = (
     <>
-      <View style={[styles.icon, { backgroundColor: background }]}><Icon size={20} color={tint} /></View>
+      <TransactionIcon item={item} />
       <View style={styles.middle}>
         <TextLabel size={14} weight={fonts.bodySemi} numberOfLines={1}>{item.title}</TextLabel>
         <TextLabel size={12} color={colors.textDim} numberOfLines={1}>{time} · {item.detail}</TextLabel>
@@ -77,8 +152,7 @@ export function TransactionRow({ item, onPress, index }: { item: WalletTransacti
 }
 
 const makeStyles = (colors: Palette) => StyleSheet.create({
-  tile: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: radius.lg, backgroundColor: colors.surface },
-  icon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  tile: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: radius.lg, backgroundColor: colors.listTile },
   middle: { flex: 1, minWidth: 0, gap: 4 },
   right: { alignItems: 'flex-end', gap: 5 },
   tabularAmount: { fontVariant: ['tabular-nums'] },
